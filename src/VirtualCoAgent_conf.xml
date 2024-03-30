@@ -7,4 +7,6 @@
 	<en_queue_name>RESULT_ONL</en_queue_name>
 	<de_queue_path>/home/ums/java_package/enmq</de_queue_path>
 	<de_queue_name>LG_SM_ONL</de_queue_name>
+	<echo_server_ip>127.0.0.1</echo_server_ip>
+	<echo_server_port>12345</echo_server_port>
 </configuration>

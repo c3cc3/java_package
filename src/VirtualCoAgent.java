@@ -20,6 +20,9 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+
 class DeQueueThread extends Thread {
 	static {
         System.loadLibrary("jfq"); // Load native library at runtime
@@ -32,16 +35,15 @@ class DeQueueThread extends Thread {
 	private static String qName;
 	private static String logLevel;
 	private static String logPathFile;
+	private final BlockingQueue<String> sharedQueue;
 
-	private StringBuilder sharedString;
-
-    public DeQueueThread ( int qId, String qPath, String qName, String logLevel, String logPathFile, StringBuilder sharedString ) {
+    public DeQueueThread ( int qId, String qPath, String qName, String logLevel, String logPathFile, BlockingQueue<String> sharedQueue ) {
         this.qId = qId;
         this.qPath = qPath;
         this.qName = qName;
         this.logLevel = logLevel;
         this.logPathFile = logPathFile;
-		this.sharedString = sharedString;
+		this.sharedQueue = sharedQueue;
 		System.out.println("qId is [" + qId + "]");
     }
 
@@ -97,6 +99,12 @@ class DeQueueThread extends Thread {
                     //
 
                     if( rc > 4) { // normal data
+						try {
+							sharedQueue.put(data);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+
                         rc = fqObj.commitXA();
                         System.out.println("commit success: rc: " + rc);
                     }
@@ -105,10 +113,6 @@ class DeQueueThread extends Thread {
                         System.out.println("cancel success: rc: " + rc);
                         break;
                     }
-					synchronized(sharedString) {
-						sharedString.append("Arrived new data");
-						sharedString.notify();
-					}
                     continue;
                 }
             } // while end
@@ -132,16 +136,17 @@ class EnQueueThread extends Thread {
 	private static String qName;
 	private static String logLevel;
 	private static String logPathFile;
+	private final BlockingQueue<String> sharedQueue;
 
-	private StringBuilder sharedString;
+    public EnQueueThread ( int qId, String qPath, String qName, String logLevel, String logPathFile, BlockingQueue<String> sharedQueue ) {
 
-    public EnQueueThread ( int qId, String qPath, String qName, String logLevel, String logPathFile, StringBuilder sharedString ) {
         this.qId = qId;
         this.qPath = qPath;
         this.qName = qName;
         this.logLevel = logLevel;
         this.logPathFile = logPathFile;
-		this.sharedString = sharedString;
+		this.sharedQueue = sharedQueue;
+
 		System.out.println("qId is [" + qId + "]");
     }
 
@@ -163,26 +168,30 @@ class EnQueueThread extends Thread {
 		System.out.println("file queue open success.(" + qPath + "," + qName + ")");
 
         try {
+
 			while(true) {
-				// Wait signal from DeQThread
-				synchronized(sharedString) {
-					try {
-						sharedString.wait();
-					} catch (InterruptedException e) {
-						Thread.currentThread().interrupt();
+				String qMessage = null;
+
+				try {
+					while (true) {
+						// Check if the queue is empty before taking the value
+						if (!sharedQueue.isEmpty()) {
+							qMessage = sharedQueue.take();
+							System.out.println("Consumed in sharedQueue: " + qMessage);
+							break;
+						} else {
+							System.out.println("sharedQueue is empty");
+							// Add some delay before checking again
+							Thread.sleep(1000);
+						}
 					}
+				} catch (InterruptedException e) {
+					e.printStackTrace();
 				}
-				
-				String kind_media = "SM";
-				String phone_no = "01072021516";
-				String send_msg = "01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567";
-				String template = "Hello %var1% ! my name is %var2%________________________________________________________________________________________________";
-				String var_data = "Choi|Gwisang";
-				String SendData = kind_media+phone_no+send_msg+template+var_data;
 
 				while(true) {
-					// System.out.println( "Send Data: " + SendData );
-					rc = fqObj.write( SendData );
+					System.out.println("FileQueue enQ start");
+					rc = fqObj.write( qMessage );
 
 					if( rc < 0 ) {
 						System.out.println("Write failed: " + fqObj.path + "," + fqObj.qname + "," + " rc: " + rc);
@@ -200,10 +209,9 @@ class EnQueueThread extends Thread {
 						continue;
 					}
 					else {
+						System.out.println( "FileQueue enQ  success: " + qMessage );
 						long out_seq = fqObj.get_out_seq();
 						long out_run_time = fqObj.get_out_run_time();
-
-						// System.out.println("Write success: " +  test.path + "," + test.qname + "," + " rc: " + rc + "," + " seq: " + out_seq + " run_time(micro seconds): " + out_run_time);
 
 						try {
 							Thread.sleep(1); // Pause for 1 second (1000)
@@ -239,6 +247,9 @@ public class VirtualCoAgent {
 		int rc;
 		int myid=0;
 
+		BlockingQueue<String> sharedQueue = new ArrayBlockingQueue<>(10);
+
+
 		System.out.println("args.length=" + args.length);
 		for( int i=0; i<args.length; i++) {
 			System.out.println(String.format("Command line argument %d is %s.", i , args[i]));
@@ -257,9 +268,7 @@ public class VirtualCoAgent {
 			e.printStackTrace();
 		}
 
-		StringBuilder sharedStringObj = new StringBuilder();
-
-		DeQueueThread DeThreadObj = new DeQueueThread( 0, deQueuePath, deQueueName, logLevel, logPathFile,  sharedStringObj);
+		DeQueueThread DeThreadObj = new DeQueueThread( 0, deQueuePath, deQueueName, logLevel, logPathFile,  sharedQueue);
 		DeThreadObj.start();
 	
 		try {
@@ -268,8 +277,10 @@ public class VirtualCoAgent {
 			Thread.currentThread().interrupt();
 		}
 
-		EnQueueThread EnThreadObj = new EnQueueThread( 1, enQueuePath, enQueueName, logLevel, logPathFile, sharedStringObj);
+		EnQueueThread EnThreadObj = new EnQueueThread( 1, enQueuePath, enQueueName, logLevel, logPathFile, sharedQueue);
 		EnThreadObj.start();
+
+
 	} // main end.
 
 	private static void parseConfigFile(String configFilePath) throws Exception {
