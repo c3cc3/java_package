@@ -1,0 +1,5 @@
+[토  3월 30 10:40:44.882 2024] [156196:0] [error] OpenFileQueue::fqueue.c (04380): You don't have a license in this system in directory[/home/umsd/java_package/enmq].
+[토  3월 30 10:40:44.882 2024] [156196:0] [error] Java_com_clang_fq_FileQueueJNI_NativeOpen::com_clang_fq_FileQueueJNI.c (00155): path=[/home/umsd/java_package/enmq], qname=[RESULT_ONL].
+[토  3월 30 10:40:44.882 2024] [156196:0] [error] log_call_process_info::fq_manage.c (02313): RUN_NAME="/usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java".
+[토  3월 30 10:40:44.882 2024] [156196:0] [error] log_call_process_info::fq_manage.c (02321): EXE_NAME="java"
+

@@ -1,0 +1,31 @@
+ums_common_conf.o: ums_common_conf.c ../../include/fq_config.h \
+ ../../include/fq_cache.h ../../include/fq_global.h \
+ ../../include/fq_version.h ../../include/fq_types.h \
+ ../../include/fq_logger.h ../../include/fq_param.h \
+ ../../include/fq_config.h ums_common_conf.h ../../include/fq_logger.h \
+ ../../include/fq_common.h ../../include/config.h ../../include/fq_defs.h
+virtual_gw_conf.o: virtual_gw_conf.c ../../include/fq_config.h \
+ ../../include/fq_cache.h ../../include/fq_global.h \
+ ../../include/fq_version.h ../../include/fq_types.h \
+ ../../include/fq_logger.h ../../include/fq_param.h \
+ ../../include/fq_config.h ../../include/fq_logger.h \
+ ../../include/fq_common.h ../../include/config.h ../../include/fq_defs.h \
+ virtual_gw_conf.h
+virtual_gw_main.o: virtual_gw_main.c ../../include/fq_common.h \
+ ../../include/config.h ../../include/fq_defs.h ../../include/fq_cache.h \
+ ../../include/fq_logger.h ../../include/fq_global.h \
+ ../../include/fq_version.h ../../include/fq_types.h \
+ ../../include/fq_linkedlist.h ../../include/fq_delimiter_list.h \
+ ../../include/fq_codemap.h ../../include/fqueue.h \
+ ../../include/fq_flock.h ../../include/fq_unixQ.h \
+ ../../include/fq_eventlog.h ../../include/fq_external_env.h \
+ ../../include/fq_monitor.h ../../include/fq_semaphore.h \
+ ../../include/fq_linkedlist.h ../../include/fq_hashobj.h \
+ ../../include/fq_codemap.h ../../include/fq_heartbeat.h \
+ ../../include/fq_common.h ../../include/fq_typedef.h \
+ ../../include/fq_conf.h ../../include/fq_manage.h ../../include/fqueue.h \
+ ../../include/parson.h ../../include/fq_pthread_mutex_lock.h \
+ ../../include/fq_file_list.h ums_common_conf.h ../../include/fq_config.h \
+ ../../include/fq_timer.h ../../include/fq_hashobj.h \
+ ../../include/fq_tci.h ../../include/fq_cache.h ../../include/fq_conf.h \
+ ../../include/fq_gssi.h ../../include/fq_mem.h virtual_gw_conf.h

@@ -1,0 +1,3 @@
+Ubuntu, Linux Mint, elementary OS, Kali Linux
+dpkg
+apt
