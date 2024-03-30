@@ -15,7 +15,7 @@
     "MSG_VER": "01",
     "REQUEST_CO_ID": "0000012345",
     "REQUEST_DTTM": "%cache senddate%",
-    "DIST_Q_DTTM": "",
+    "DIST_Q_DTTM": "%cache DistDate%",
     "RCV_PHN_NO": "01072021516",
     "SND_PHN_NO": "0212341234",
     "CALLBACK_NO": "0212341234",
