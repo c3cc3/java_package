@@ -137,9 +137,13 @@ int main( int ac, char **av)
 		char date[9], time[7];
 		get_time(date, time);
 		char send_time[16];
+		char dist_time[16];
+
 		sprintf(send_time, "%s%s", date, time);
 		cache_update(cache_short_for_gssi, "senddate", send_time, 0);
 
+		sprintf(dist_time, "%s%s", date, time);
+		cache_update(cache_short_for_gssi, "DistDate", dist_time, 0);
 
 		char tempbuf[12];
 		char rand_telno_11[12];
