@@ -1,0 +1,724 @@
+[Sun Mar 31 23:56:20.970 2024] [55782:0] [debug] fq_set_time_fmt::fq_log.c (00144): Pre-processed log time stamp format is '[%a %b %d %H:%M:%S.000 %Y] '
+[Sun Mar 31 23:56:20.970 2024] [55782:0] [trace] load_fq_container::fq_manage.c (00758): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_file_list::fq_file_list.c (00078): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_file_list::fq_file_list.c (00129): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_file_list::fq_file_list.c (00078): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_file_list::fq_file_list.c (00129): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] load_info_param::fq_info_param.c (00013): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] read_fq_info::fq_info.c (00297): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] read_fq_info::fq_info.c (00356): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] load_info_param::fq_info_param.c (00023): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] load_info_param::fq_info_param.c (00013): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] read_fq_info::fq_info.c (00297): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] read_fq_info::fq_info.c (00356): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] load_info_param::fq_info_param.c (00023): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] load_info_param::fq_info_param.c (00013): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] read_fq_info::fq_info.c (00297): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] read_fq_info::fq_info.c (00356): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] load_info_param::fq_info_param.c (00023): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] load_info_param::fq_info_param.c (00013): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] read_fq_info::fq_info.c (00297): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] read_fq_info::fq_info.c (00356): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] load_info_param::fq_info_param.c (00023): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] load_info_param::fq_info_param.c (00013): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] read_fq_info::fq_info.c (00297): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] read_fq_info::fq_info.c (00356): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] load_info_param::fq_info_param.c (00023): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_file_list::fq_file_list.c (00078): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_file_list::fq_file_list.c (00081): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] load_fq_container::fq_manage.c (00917): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [debug] main::wmonitor.c (00440): file_count=[0]
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [debug] OpenFileQueues_and_MakeLinkedlist::wmonitor.c (00554): OPEN: [/home/ums/java_package/enmq/LG_SM_ONL].
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] OpenFileQueue::fqueue.c (04371): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_headfile_obj::fqueue.c (00926): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] can_access_file::fq_common.c (02815): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [debug] can_access_file::fq_common.c (02828): [/home/ums/java_package/enmq/LG_SM_ONL.h] access OK.
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] can_access_file::fq_common.c (02829): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] fq_mmapping::fqueue.c (00330): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] fq_mmapping::fqueue.c (00342): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_flock_obj::fq_flock.c (00031): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_flock_obj::fq_flock.c (00088): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_flock_obj::fq_flock.c (00031): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_flock_obj::fq_flock.c (00088): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_shmlock_obj::fq_pthread_mutex_lock.c (00221): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_shmlock_obj::fq_pthread_mutex_lock.c (00324): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_shmlock_obj::fq_pthread_mutex_lock.c (00221): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_shmlock_obj::fq_pthread_mutex_lock.c (00324): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_headfile_obj::fqueue.c (01004): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_datafile_obj::fqueue.c (01025): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] can_access_file::fq_common.c (02815): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [debug] can_access_file::fq_common.c (02828): [/home/ums/java_package/enmq/LG_SM_ONL.r] access OK.
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] can_access_file::fq_common.c (02829): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_datafile_obj::fqueue.c (01058): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_backupfile_obj::fqueue.c (01078): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_backupfile_obj::fqueue.c (01102): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_unixQ_obj::fq_unixQ.c (00151): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] OpenFileQueue::fqueue.c (04524): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [debug] OpenFileQueues_and_MakeLinkedlist::wmonitor.c (00574): /home/ums/java_package/enmq:LG_SM_ONL open success.
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [debug] OpenFileQueues_and_MakeLinkedlist::wmonitor.c (00554): OPEN: [/home/ums/java_package/enmq/KT_SM_ONL].
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] OpenFileQueue::fqueue.c (04371): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_headfile_obj::fqueue.c (00926): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] can_access_file::fq_common.c (02815): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [debug] can_access_file::fq_common.c (02828): [/home/ums/java_package/enmq/KT_SM_ONL.h] access OK.
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] can_access_file::fq_common.c (02829): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] fq_mmapping::fqueue.c (00330): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] fq_mmapping::fqueue.c (00342): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_flock_obj::fq_flock.c (00031): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_flock_obj::fq_flock.c (00088): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_flock_obj::fq_flock.c (00031): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_flock_obj::fq_flock.c (00088): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_shmlock_obj::fq_pthread_mutex_lock.c (00221): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_shmlock_obj::fq_pthread_mutex_lock.c (00324): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_shmlock_obj::fq_pthread_mutex_lock.c (00221): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_shmlock_obj::fq_pthread_mutex_lock.c (00324): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_headfile_obj::fqueue.c (01004): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_datafile_obj::fqueue.c (01025): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] can_access_file::fq_common.c (02815): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [debug] can_access_file::fq_common.c (02828): [/home/ums/java_package/enmq/KT_SM_ONL.r] access OK.
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] can_access_file::fq_common.c (02829): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_datafile_obj::fqueue.c (01058): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_backupfile_obj::fqueue.c (01078): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_backupfile_obj::fqueue.c (01102): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_unixQ_obj::fq_unixQ.c (00151): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] OpenFileQueue::fqueue.c (04524): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [debug] OpenFileQueues_and_MakeLinkedlist::wmonitor.c (00574): /home/ums/java_package/enmq:KT_SM_ONL open success.
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [debug] OpenFileQueues_and_MakeLinkedlist::wmonitor.c (00554): OPEN: [/home/ums/java_package/enmq/SK_SM_ONL].
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] OpenFileQueue::fqueue.c (04371): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_headfile_obj::fqueue.c (00926): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] can_access_file::fq_common.c (02815): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [debug] can_access_file::fq_common.c (02828): [/home/ums/java_package/enmq/SK_SM_ONL.h] access OK.
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] can_access_file::fq_common.c (02829): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] fq_mmapping::fqueue.c (00330): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] fq_mmapping::fqueue.c (00342): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_flock_obj::fq_flock.c (00031): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_flock_obj::fq_flock.c (00088): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_flock_obj::fq_flock.c (00031): enter
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_flock_obj::fq_flock.c (00088): exit
+[Sun Mar 31 23:56:20.971 2024] [55782:0] [trace] open_shmlock_obj::fq_pthread_mutex_lock.c (00221): enter
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_shmlock_obj::fq_pthread_mutex_lock.c (00324): exit
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_shmlock_obj::fq_pthread_mutex_lock.c (00221): enter
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_shmlock_obj::fq_pthread_mutex_lock.c (00324): exit
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_headfile_obj::fqueue.c (01004): exit
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_datafile_obj::fqueue.c (01025): enter
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] can_access_file::fq_common.c (02815): enter
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [debug] can_access_file::fq_common.c (02828): [/home/ums/java_package/enmq/SK_SM_ONL.r] access OK.
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] can_access_file::fq_common.c (02829): exit
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_datafile_obj::fqueue.c (01058): exit
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_backupfile_obj::fqueue.c (01078): enter
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_backupfile_obj::fqueue.c (01102): exit
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_unixQ_obj::fq_unixQ.c (00151): enter
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] OpenFileQueue::fqueue.c (04524): exit
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [debug] OpenFileQueues_and_MakeLinkedlist::wmonitor.c (00574): /home/ums/java_package/enmq:SK_SM_ONL open success.
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [debug] OpenFileQueues_and_MakeLinkedlist::wmonitor.c (00554): OPEN: [/home/ums/java_package/enmq/IB_SM_ONL].
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] OpenFileQueue::fqueue.c (04371): enter
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_headfile_obj::fqueue.c (00926): enter
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] can_access_file::fq_common.c (02815): enter
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [debug] can_access_file::fq_common.c (02828): [/home/ums/java_package/enmq/IB_SM_ONL.h] access OK.
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] can_access_file::fq_common.c (02829): exit
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] fq_mmapping::fqueue.c (00330): enter
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] fq_mmapping::fqueue.c (00342): exit
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_flock_obj::fq_flock.c (00031): enter
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_flock_obj::fq_flock.c (00088): exit
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_flock_obj::fq_flock.c (00031): enter
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_flock_obj::fq_flock.c (00088): exit
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_shmlock_obj::fq_pthread_mutex_lock.c (00221): enter
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_shmlock_obj::fq_pthread_mutex_lock.c (00324): exit
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_shmlock_obj::fq_pthread_mutex_lock.c (00221): enter
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_shmlock_obj::fq_pthread_mutex_lock.c (00324): exit
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_headfile_obj::fqueue.c (01004): exit
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_datafile_obj::fqueue.c (01025): enter
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] can_access_file::fq_common.c (02815): enter
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [debug] can_access_file::fq_common.c (02828): [/home/ums/java_package/enmq/IB_SM_ONL.r] access OK.
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] can_access_file::fq_common.c (02829): exit
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_datafile_obj::fqueue.c (01058): exit
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_backupfile_obj::fqueue.c (01078): enter
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_backupfile_obj::fqueue.c (01102): exit
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_unixQ_obj::fq_unixQ.c (00151): enter
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] OpenFileQueue::fqueue.c (04524): exit
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [debug] OpenFileQueues_and_MakeLinkedlist::wmonitor.c (00574): /home/ums/java_package/enmq:IB_SM_ONL open success.
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [debug] OpenFileQueues_and_MakeLinkedlist::wmonitor.c (00554): OPEN: [/home/ums/java_package/enmq/RESULT_ONL].
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] OpenFileQueue::fqueue.c (04371): enter
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_headfile_obj::fqueue.c (00926): enter
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] can_access_file::fq_common.c (02815): enter
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [debug] can_access_file::fq_common.c (02828): [/home/ums/java_package/enmq/RESULT_ONL.h] access OK.
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] can_access_file::fq_common.c (02829): exit
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] fq_mmapping::fqueue.c (00330): enter
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] fq_mmapping::fqueue.c (00342): exit
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_flock_obj::fq_flock.c (00031): enter
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_flock_obj::fq_flock.c (00088): exit
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_flock_obj::fq_flock.c (00031): enter
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_flock_obj::fq_flock.c (00088): exit
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_shmlock_obj::fq_pthread_mutex_lock.c (00221): enter
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_shmlock_obj::fq_pthread_mutex_lock.c (00324): exit
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_shmlock_obj::fq_pthread_mutex_lock.c (00221): enter
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_shmlock_obj::fq_pthread_mutex_lock.c (00324): exit
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_headfile_obj::fqueue.c (01004): exit
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_datafile_obj::fqueue.c (01025): enter
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] can_access_file::fq_common.c (02815): enter
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [debug] can_access_file::fq_common.c (02828): [/home/ums/java_package/enmq/RESULT_ONL.r] access OK.
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] can_access_file::fq_common.c (02829): exit
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_datafile_obj::fqueue.c (01058): exit
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_backupfile_obj::fqueue.c (01078): enter
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_backupfile_obj::fqueue.c (01102): exit
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_unixQ_obj::fq_unixQ.c (00151): enter
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] OpenFileQueue::fqueue.c (04524): exit
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [debug] OpenFileQueues_and_MakeLinkedlist::wmonitor.c (00574): /home/ums/java_package/enmq:RESULT_ONL open success.
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [info] OpenFileQueues_and_MakeLinkedlist::wmonitor.c (00619): Number of opened filequeue is [5].
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_external_env_obj::fq_external_env.c (00042): enter
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [debug] open_external_env_obj::fq_external_env.c (00072): external environment file(/home/ums/java_package/enmq/FQ_external_env.conf) loading OK.
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] open_external_env_obj::fq_external_env.c (00073): exit
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] on_get_extenv::fq_external_env.c (00173): enter
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [trace] on_get_extenv::fq_external_env.c (00180): exit
+[Sun Mar 31 23:56:20.972 2024] [55782:0] [debug] main::wmonitor.c (00471): winsize_columns=[172], winsize_rows=[46].
+
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:20.973 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:21.974 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:21.974 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:21.974 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:21.974 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:21.974 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:21.974 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:21.974 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:21.974 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:21.974 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:21.974 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:21.974 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:21.974 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:21.974 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:21.974 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:21.974 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:21.975 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:22.975 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:22.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:22.975 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:22.975 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:22.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:22.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:22.975 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:22.975 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:22.975 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:22.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:22.975 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:22.975 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:22.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:22.975 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:22.975 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:22.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:22.975 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:22.975 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:22.975 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:22.976 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:23.976 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:23.977 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:24.978 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] on_check_competition::fqueue.c (01309): enter
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00064): enter
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] on_mutex_lock::fq_pthread_mutex_lock.c (00082): exit
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01226): enter
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00178): enter
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [debug] on_mutex_unlock::fq_pthread_mutex_lock.c (00181): safe unlock OK.
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] on_mutex_unlock::fq_pthread_mutex_lock.c (00183): exit
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] fq_critical_section::fqueue.c (01297): exit
+[Sun Mar 31 23:56:24.979 2024] [55782:0] [trace] on_check_competition::fqueue.c (01337): exit
+[Sun Mar 31 23:56:25.152 2024] [55782:0] [emerg] waiting_key_thread::wmonitor.c (00281): n=[999]

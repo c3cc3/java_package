@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <curses.h>
+#include <ncurses/curses.h>
 #include <pthread.h>
 #include <pwd.h>
 #include <sys/types.h>

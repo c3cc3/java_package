@@ -91,8 +91,6 @@ int main( int ac, char **av)
 
 	close_mem_obj(l, &source);
     close_mem_obj(l, &target);
-
-
 	if(Load_ums_common_conf(&cm_conf, &errmsg) == false) {
 		printf("Load_ums_common_conf() error. reason='%s'\n", errmsg);
 		return(-1);

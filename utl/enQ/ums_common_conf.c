@@ -35,7 +35,7 @@ bool Load_ums_common_conf(ums_common_conf_t **common_conf, char **ptr_errmsg)
 
 	/* Check whether essential items(mandatory) are omitted. */
 	if(get_config(_config, "UMS_COMMON_LOG_PATH", buffer) == NULL) {
-		sprintf(ErrMsg, "UMS_COMMMON_LOG_PATH is undefined in your config file.");
+		sprintf(ErrMsg, "UMS_COMMON_LOG_PATH is undefined in your config file.");
 		*ptr_errmsg = strdup(ErrMsg);
 		return false;
 	}

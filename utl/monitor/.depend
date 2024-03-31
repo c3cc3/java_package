@@ -1,9 +1,14 @@
-fuser_popen.o: fuser_popen.c ../../include/fq_delimiter_list.h \
+fuser_popen.o: fuser_popen.c \
+ /home/ums/java_package/include/ncurses/curses.h \
+ ../../include/ncurses/ncurses_dll.h ../../include/ncurses/unctrl.h \
+ ../../include/ncurses/curses.h ../../include/fq_delimiter_list.h \
  ../../include/fq_logger.h ../../include/fq_global.h \
  ../../include/fq_version.h ../../include/fq_types.h \
  ../../include/fq_common.h ../../include/config.h ../../include/fq_defs.h \
  ../../include/fq_cache.h
-monitor.o: monitor.c ../../include/fqueue.h ../../include/fq_flock.h \
+monitor.o: monitor.c ../../include/ncurses/curses.h \
+ ../../include/ncurses/ncurses_dll.h ../../include/ncurses/unctrl.h \
+ ../../include/fqueue.h ../../include/fq_flock.h \
  ../../include/fq_logger.h ../../include/fq_global.h \
  ../../include/fq_version.h ../../include/fq_types.h \
  ../../include/fq_unixQ.h ../../include/fq_eventlog.h \
@@ -18,4 +23,6 @@ monitor.o: monitor.c ../../include/fqueue.h ../../include/fq_flock.h \
  ../../include/fq_socket.h screen.h ../../include/fq_file_list.h \
  fuser_popen.h ../../include/fq_manage.h ../../include/parson.h \
  ../../include/fq_external_env.h monitor.h ../../include/fq_timer.h
-screen.o: screen.c screen.h
+screen.o: screen.c /home/ums/java_package/include/ncurses/curses.h \
+ ../../include/ncurses/ncurses_dll.h ../../include/ncurses/unctrl.h \
+ ../../include/ncurses/curses.h screen.h

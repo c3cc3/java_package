@@ -1,0 +1,11 @@
+# 1-th column: path
+# 2-th column: qname
+# 3-th       : mapping_num
+# 4-th       : multi_num
+# 5-th       : msglen
+#
+/home/ums/java_package/enmq|LG_SM_ONL|100|10|8192
+/home/ums/java_package/enmq|KT_SM_ONL|100|10|8192
+/home/ums/java_package/enmq|SK_SM_ONL|100|10|8192
+/home/ums/java_package/enmq|IB_SM_ONL|100|10|8192
+/home/ums/java_package/enmq|RESULT_ONL|100|10|8192
