@@ -1,5 +1,5 @@
-set -x
-export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+#export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.402.b06-2.0.1.el8.x86_64
 export FQ_WORK_HOME=/home/ums/java_package
 export FQ_DATA_HOME=/home/ums/java_package/enmq
 export FQ_LIB_HOME=/home/ums/java_package/lib
