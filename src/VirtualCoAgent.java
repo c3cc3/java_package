@@ -23,6 +23,8 @@ import java.nio.file.Paths;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
+import org.json.JSONObject;
+
 class DeQueueThread extends Thread {
 	static {
         System.loadLibrary("jfq"); // Load native library at runtime
@@ -189,9 +191,31 @@ class EnQueueThread extends Thread {
 					e.printStackTrace();
 				}
 
+				// JSON 파싱
+				JSONObject jsonObj = new JSONObject(qMessage);
+				String historyKey = jsonObj.getString("HISTORY_KEY");
+				String channelType = jsonObj.getString("CHANNEL_TYPE");
+				String msgKind = jsonObj.getString("MSG_KIND");
+				String rcvPhnNo = jsonObj.getString("RCV_PHN_NO");
+
+				System.out.println("HISTORY_KEY: " + historyKey);
+				System.out.println("CHANNEL_TYPE: " + channelType);
+				System.out.println("MSG_KIND: " + msgKind);
+				System.out.println("RCV_PHN_NO: " + rcvPhnNo);
+
+				// 새로운 JSON 생성
+				JSONObject resultJson = new JSONObject();
+
+				resultJson.put("HISTORY_KEY", historyKey);
+				resultJson.put("CHANNEL_TYPE", channelType);
+				resultJson.put("RESULT_CODE", "0000");
+
+				String newJsonString = resultJson.toString();
+				System.out.println("New JSON String: " + newJsonString);
+
 				while(true) {
 					System.out.println("FileQueue enQ start");
-					rc = fqObj.write( qMessage );
+					rc = fqObj.write( newJsonString );
 
 					if( rc < 0 ) {
 						System.out.println("Write failed: " + fqObj.path + "," + fqObj.qname + "," + " rc: " + rc);
