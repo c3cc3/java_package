@@ -77,7 +77,7 @@ class DeQueueThread extends Thread {
                     break;
                 }
                 else if( rc == 0 ) {
-                    System.out.println( myID + "->empty: " + fqObj.path + "," + fqObj.qname + "," + " rc: " + rc);
+                    System.out.println( myID + "-> File queue is empty: " + fqObj.path + "," + fqObj.qname + "," + " rc: " + rc);
                     try {
                         Thread.sleep(1000); // Pause for 1 second
                     }
@@ -182,7 +182,7 @@ class EnQueueThread extends Thread {
 							System.out.println("Consumed in sharedQueue: " + qMessage);
 							break;
 						} else {
-							System.out.println("sharedQueue is empty");
+							System.out.println(myID + "-> sharedQueue is empty");
 							// Add some delay before checking again
 							Thread.sleep(1000);
 						}
