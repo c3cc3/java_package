@@ -1,8 +1,9 @@
 #export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
-export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.402.b06-2.0.1.el8.x86_64
-export FQ_WORK_HOME=/home/ums/java_package
-export FQ_DATA_HOME=/home/ums/java_package/enmq
-export FQ_LIB_HOME=/home/ums/java_package/lib
-export PATH=$PATH:/home/ums/java_package/bin:$JAVA_HOME
-export UMS_COMMON_CONF_FILE=/home/ums/java_package/conf/ums_common.conf
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/ums/java_package/lib:$JAVA_HOME/lib:
+#export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.402.b06-2.0.1.el8.x86_64
+export JAVA_HOME=/opt/jdk-17
+export FQ_WORK_HOME=$HOME/java_package
+export FQ_DATA_HOME=$HOME/java_package/enmq
+export FQ_LIB_HOME=$HOME/java_package/lib
+export PATH=$PATH:$HOME/java_package/bin:$JAVA_HOME
+export UMS_COMMON_CONF_FILE=$HOME/java_package/conf/ums_common.conf
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/java_package/lib:$JAVA_HOME/lib:
