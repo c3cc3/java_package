@@ -225,7 +225,7 @@ class EnQueueThread extends Thread {
 					else if( rc == 0 ) {
 						System.out.println("full: " + fqObj.path + "," + fqObj.qname + "," + " rc: " + rc);
 						try {
-							Thread.sleep(1); // Pause for 1 second (1000)
+							Thread.sleep(1000); // Pause for 1 second (1000)
 						}
 						catch(InterruptedException ex) {
 								Thread.currentThread().interrupt();
@@ -238,7 +238,7 @@ class EnQueueThread extends Thread {
 						long out_run_time = fqObj.get_out_run_time();
 
 						try {
-							Thread.sleep(1); // Pause for 1 second (1000)
+							Thread.sleep(5); 
 						}
 						catch(InterruptedException ex) {
 								Thread.currentThread().interrupt();
