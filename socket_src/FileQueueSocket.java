@@ -5,6 +5,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+// import org.apache.logging.log4j.LogManager;
+// import org.apache.logging.log4j.Logger;
+// import org.apache.log4j.Logger;
+// import org.apache.log4j.LogManager;
 
 public class FileQueueSocket {
 	private Socket socket;
@@ -14,6 +18,7 @@ public class FileQueueSocket {
 	private String qName;
 	private String sessionId;
 	private String message;
+	// private static final Logger logger = LogManager.getLogger(FileQueueSocket.class);
 
 	public FileQueueSocket(String serverAddress, int serverPort, String qPath, String qName ) throws IOException {
         this.socket = new Socket(serverAddress, serverPort);
@@ -23,6 +28,13 @@ public class FileQueueSocket {
 		this.qName = qName;
     }
 	public int open() throws IOException {
+
+		// logger.trace("Trace 메시지");
+        // logger.debug("Debug 메시지");
+        // logger.info("Info 메시지");
+        // logger.warn("Warn 메시지");
+        // logger.error("Error 메시지");
+        // logger.fatal("Fatal 메시지");
 
 		JSONObject requestJson = new JSONObject();
 
@@ -53,12 +65,12 @@ public class FileQueueSocket {
 		
         String result = responseJSON.getString("RESULT");
 
-		System.out.println("RESULT:" + result);
+		// System.out.println("RESULT:" + result);
 
         if ("OK".equals(result)) {
-            System.out.println("서버 응답이 성공했습니다.");
+            // System.out.println("서버 응답이 성공했습니다.");
 			this.sessionId = responseJSON.getString("SESSION_ID");
-            System.out.println("SESSION_ID: " + this.sessionId );
+            // System.out.println("SESSION_ID: " + this.sessionId );
 			return 0;
         } else {
 			return -1;
@@ -96,20 +108,20 @@ public class FileQueueSocket {
 		
         String result = responseJSON.getString("RESULT");
 
-		System.out.println("RESULT:" + result);
+		// System.out.println("RESULT:" + result);
 
         if ("OK".equals(result)) {
-            System.out.println("서버 응답이 성공했습니다.");
+            // System.out.println("서버 응답이 성공했습니다.");
             String message = responseJSON.optString("MESSAGE", "No Message");
             // System.out.println("서버로부터 받은 메시지: " + message);
 			this.message = message;
 			return message.length();
         } else if( "EMPTY".equals(result))  {
-			System.out.println("큐에 데이터가 비어있습니다. 1초 대기 후 재요청하세요.");
+			// System.out.println("큐에 데이터가 비어있습니다. 1초 대기 후 재요청하세요.");
 			return 0;
 		}
 		else {
-			System.out.println("서버 응답이 실패했습니다. 클라이언트 종료하세요.");
+			// System.out.println("서버 응답이 실패했습니다. 클라이언트 종료하세요.");
 			return -1;
 		}
 	}
@@ -144,17 +156,17 @@ public class FileQueueSocket {
 		
         String result = responseJSON.getString("RESULT");
 
-		System.out.println("RESULT:" + result);
+		// System.out.println("RESULT:" + result);
 
         if ("OK".equals(result)) {
-			System.out.println("큐에 저장을 성공했습니다.");
+			// System.out.println("큐에 저장을 성공했습니다.");
 			return userMessage.length();
         } else if( "FULL".equals(result))  {
-			System.out.println("큐에 데이터가 꽉 차 있습니다(full). 1초 대기 후 재요청합니다.");
+			// System.out.println("큐에 데이터가 꽉 차 있습니다(full). 1초 대기 후 재요청합니다.");
 			return 0;
 		}
 		else {
-			System.out.println("서버 응답이 실패했습니다. 클라이언트 종료하세요.");
+			// System.out.println("서버 응답이 실패했습니다. 클라이언트 종료하세요.");
 			return -1;
 		}
 	}
