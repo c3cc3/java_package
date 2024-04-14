@@ -1,3 +1,5 @@
+package com.clang.socket;
+
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -10,6 +12,7 @@ import java.nio.ByteBuffer;
 // import org.apache.log4j.Logger;
 // import org.apache.log4j.LogManager;
 
+// access modifier: public, protected, default(아무 제어자도 명시하지 않은 경우), private
 public class FileQueueSocket {
 	// instance variables
 	private Socket socket;
