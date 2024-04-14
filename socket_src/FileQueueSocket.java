@@ -11,6 +11,7 @@ import java.nio.ByteBuffer;
 // import org.apache.log4j.LogManager;
 
 public class FileQueueSocket {
+	// instance variables
 	private Socket socket;
 	private OutputStream out;
 	private InputStream in;
@@ -18,8 +19,10 @@ public class FileQueueSocket {
 	private String qName;
 	private String sessionId;
 	private String message;
+
 	// private static final Logger logger = LogManager.getLogger(FileQueueSocket.class);
 
+	// Constructor
 	public FileQueueSocket(String serverAddress, int serverPort, String qPath, String qName ) throws IOException {
         this.socket = new Socket(serverAddress, serverPort);
         this.out = socket.getOutputStream();
@@ -27,6 +30,19 @@ public class FileQueueSocket {
 		this.qPath = qPath;
 		this.qName = qName;
     }
+	// finalize 메서드 오버라이딩
+    @Override
+    protected void finalize() throws Throwable {
+        try {
+            // 객체가 소멸될 때 수행할 작업을 여기에 작성합니다.
+            System.out.println("Object is being finalized.");
+			this.close();
+        } finally {
+            super.finalize();
+        }
+    }
+
+	/* instance methods */
 	public int open() throws IOException {
 
 		// logger.trace("Trace 메시지");
@@ -170,6 +186,7 @@ public class FileQueueSocket {
 			return -1;
 		}
 	}
+	// Getter
 	public String getmsg() {
 		return this.message;
 	}
