@@ -190,6 +190,11 @@ public class FileQueueSocket {
 	public String getmsg() {
 		return this.message;
 	}
+	// Setter
+	public void putmsg(String message) {
+		this.message = message;
+		return;
+	}
 
     public void close() throws IOException {
         socket.close();
