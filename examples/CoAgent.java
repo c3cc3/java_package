@@ -57,6 +57,18 @@ public class CoAgent {
 	private static void processMessages( int threadId, String qPath, String qName, int userWorkingTime) {
 		int rc;
 
+		// recovery 
+        String fileName = "thread_" + threadId + ".dat";
+		try {
+			String backupMsg = readFileIfExists( fileName );
+
+			if( backupMsg != null ) {
+				int  recovery_result = RecoveryMessage(threadId, backupMsg ); // 화면에 메시지 출력
+			}
+		} catch (IOException e) {
+            System.err.println("backup recovery 오류: " + e.getMessage());
+        }
+
 		// make a FileQueueJNI instance with naming test.
 		// 3-th argument is loglevel. (0: trace, 1: debug, 2: info, 3: Warning, 4: error, 5: emerg, 6: request)
 		// Use 1 in dev and 4 prod.
@@ -121,6 +133,7 @@ public class CoAgent {
 	} 
 
 	private static String readFileIfExists(String filePath) throws IOException {
+	// private static String readFileIfExists(String filePath) {
         // 파일 객체 생성
         File file = new File(filePath);
 
@@ -132,13 +145,13 @@ public class CoAgent {
 
         // 파일 읽기
         StringBuilder content = new StringBuilder();
+
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 content.append(line).append(System.lineSeparator());
             }
         }
-
         return content.toString();
     }
 	
@@ -157,6 +170,12 @@ public class CoAgent {
     // my job
     private static int  DoMessage(int threadId, int rc, long out_seq, long out_run_time, String message) {
 	    System.out.println("(" + threadId + ")" + "data read success:" + " rc: " + rc + " msg: " + message + " seq: " + out_seq + " run_time(micro seconds): " + out_run_time);
+		return 1;
+    }
+
+    // my job
+    private static int  RecoveryMessage(int threadId, String message) {
+	    System.out.println("(" + threadId + ")" + "recovery :"  + message);
 		return 1;
     }
 
