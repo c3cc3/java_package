@@ -10,15 +10,16 @@ import java.util.concurrent.Executors;
 ** Warning: max buffer size is 65536
 */
 public class CoAgent {
-   static {
-      System.loadLibrary("jfq"); // Load native library at runtime
+	static {
+    	System.loadLibrary("jfq"); // Load native library at runtime
                                    // hello.dll (Windows) or libhello.so (Unixes)
-	  System.loadLibrary("fq");
-   }
+		System.loadLibrary("fq");
+	}
 	CoAgent () {
 
 	}
-	private static final int THREAD_COUNT = 50;
+
+	private static final int THREAD_COUNT = 10;
  
 	// Test Driver
 	public static void main(String[] args) {
@@ -92,7 +93,7 @@ public class CoAgent {
 
 				writeMessageToFile(threadId, data); // 파일에 메시지 쓰기
 
-				int your_job_result = DoMessage(read_rc, out_seq, out_run_time,  data ); // 화면에 메시지 출력
+				int your_job_result = DoMessage(threadId, read_rc, out_seq, out_run_time,  data ); // 화면에 메시지 출력
 
 				// input your jobs in here ///////////////////////////////////
 				// 
@@ -125,13 +126,13 @@ public class CoAgent {
             writer.newLine();
             writer.flush();
         } catch (IOException e) {
-            System.err.println("Error writing to file: " + e.getMessage());
+            System.err.println("(" + threadId + ")" + "Error writing to file: " + e.getMessage());
         }
     }
 
     // my job
-    private static int  DoMessage(int rc, long out_seq, long out_run_time, String message) {
-	    System.out.println("data read success:" + " rc: " + rc + " msg: " + message + " seq: " + out_seq + " run_time(micro seconds): " + out_run_time);
+    private static int  DoMessage(int threadId, int rc, long out_seq, long out_run_time, String message) {
+	    System.out.println("(" + threadId + ")" + "data read success:" + " rc: " + rc + " msg: " + message + " seq: " + out_seq + " run_time(micro seconds): " + out_run_time);
 		return 1;
     }
 
@@ -140,9 +141,9 @@ public class CoAgent {
         String fileName = "thread_" + threadId + ".txt";
         File file = new File(fileName);
         if (file.delete()) {
-            System.out.println("Deleted file: " + fileName);
+            System.out.println("(" + threadId + ")" + "Deleted file: " + fileName);
         } else {
-            System.err.println("Failed to delete file: " + fileName);
+            System.err.println("(" + threadId + ")" + "Failed to delete file: " + fileName);
         }
     }
 } // class block end.
