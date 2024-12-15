@@ -41,17 +41,70 @@ public class CoAgent {
 		String qName = args[1];
 		int userWorkingTime = Integer.parseInt(args[2]);
 
+		// ExecutorService를 사용하여 스레드 생성
+        ExecutorService resultExecutor = Executors.newFixedThreadPool(1);
+
+		// 1 개의 결과 수신 스레드 생성
+		final int receiveThreadId = THREAD_COUNT+1;
+		String resultQueueName = "GW_ONL_HIS";
+		resultExecutor.execute(() -> processReceiver(receiveThreadId, qPath, resultQueueName));
+
 
 		// ExecutorService를 사용하여 스레드 생성
         ExecutorService executor = Executors.newFixedThreadPool(THREAD_COUNT);
 
-        // 10개의 스레드 생성
+        // 10개의 발송 스레드 생성
         for (int i = 0; i < THREAD_COUNT; i++) {
             final int threadId = i;
             executor.execute(() -> processMessages(threadId, qPath, qName, userWorkingTime));
 		}
 
 		executor.shutdown();
+		resultExecutor.shutdown();
+	}
+
+	private static void processReceiver(int threadId, String qPath, String qName)  {
+		int rc;
+
+		FileQueueJNI resultQueue = new FileQueueJNI( threadId, "/tmp/jni.log", 4, qPath, qName);
+		if(  (rc = resultQueue.open()) < 0 ) {
+			System.out.println("open failed: " + "qPath="+qPath + ", qName=" + qName + ", rc=" + rc);
+			return;
+		}
+
+		while(true) {
+			String enQueueData = "This is a result.";
+			int write_rc = resultQueue.write( enQueueData );
+
+			if( write_rc < 0 ) {
+				System.out.println("Write failed: " + resultQueue.path + "," + resultQueue.qname + "," + " rc: " + write_rc);
+				resultQueue.close();
+				return;
+			}
+			else if( write_rc == 0 ) { // queue is full
+				System.out.println("full: " + resultQueue.path + "," + resultQueue.qname + "," + " rc: " + write_rc);
+				try {
+					Thread.sleep(10); // Pause for 1 second (1000)
+				}
+				catch(InterruptedException ex) {
+				        Thread.currentThread().interrupt();
+			    }
+				continue;
+			}
+			else {
+				long out_seq = resultQueue.get_out_seq();
+				long out_run_time = resultQueue.get_out_run_time();
+
+				System.out.println("("+threadId+")"+ "enQ success: " + "seq=" + out_seq + "," + "rc:" + write_rc);
+				try {
+					Thread.sleep(100); // Pause for 1 second (1000)
+				}
+				catch(InterruptedException ex) {
+				        Thread.currentThread().interrupt();
+			    }
+				continue;
+			}
+		}
 	}
 
 	private static void processMessages( int threadId, String qPath, String qName, int userWorkingTime) {
