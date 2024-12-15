@@ -5,6 +5,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.io.BufferedReader;
+import java.io.FileReader;
 
 /*
 ** Warning: max buffer size is 65536
@@ -117,6 +119,28 @@ public class CoAgent {
 			System.out.println("Thread " + threadId + " interrupted.");
 		}
 	} 
+
+	private static String readFileIfExists(String filePath) throws IOException {
+        // 파일 객체 생성
+        File file = new File(filePath);
+
+        // 파일 존재 여부 확인
+        if (!file.exists() || !file.isFile()) {
+            // throw new IOException("파일이 존재하지 않거나 파일이 아닙니다: " + filePath);
+			return null;
+        }
+
+        // 파일 읽기
+        StringBuilder content = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                content.append(line).append(System.lineSeparator());
+            }
+        }
+
+        return content.toString();
+    }
 	
     // 스레드 ID에 따른 파일에 메시지 쓰기
     private static void writeMessageToFile(int threadId, String message) {
