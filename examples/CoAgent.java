@@ -138,7 +138,7 @@ public class CoAgent {
         File file = new File(filePath);
 
         // 파일 존재 여부 확인
-        if (!file.exists() || !file.isFile()) {
+        if (!file.exists() || !file.isFile() || file.length() == 0) {
             // throw new IOException("파일이 존재하지 않거나 파일이 아닙니다: " + filePath);
 			return null;
         }
