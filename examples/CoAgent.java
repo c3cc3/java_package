@@ -76,7 +76,12 @@ public class CoAgent {
 		}
 
 		while(true) {
+			// 실제로는 이곳에 통신사로 부터 받는 소켓 수신 코드가 들어가야 함.
+			// enQueueData = receiveResult(socket);
 			String enQueueData = "This is a result.";
+			// 이곳에도 받은 데이터 분실에 대비한 save 루틴이 필요할 수도 있지만
+			// enQ 가 워낙 빠르기 때문에 실제로 불필요 함.
+
 			int write_rc = resultQueue.write( enQueueData );
 
 			if( write_rc < 0 ) {
