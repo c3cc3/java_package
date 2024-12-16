@@ -17,6 +17,9 @@ import org.w3c.dom.NodeList;
 import org.w3c.dom.Node;
 import org.w3c.dom.Element;
 
+// for your input
+import java.util.Scanner;
+
 // 구성 값을 저장할 클래스를 정의합니다.
 class Config {
     String logLevel;
@@ -25,19 +28,19 @@ class Config {
     String resultQueueName;
     String deQueuePath;
     String deQueueName;
-    int userWorkingTime;
+    int userWorkingTimeForSimulate;
     int senderThreads;
 
     // 생성자
     public Config(String logLevel, String logFilePath, String resultQueuePath, String resultQueueName,
-                  String deQueuePath, String deQueueName, int userWorkingTime, int senderThreads) {
+                  String deQueuePath, String deQueueName, int userWorkingTimeForSimulate, int senderThreads) {
         this.logLevel = logLevel;
         this.logFilePath = logFilePath;
         this.resultQueuePath = resultQueuePath;
         this.resultQueueName = resultQueueName;
         this.deQueuePath = deQueuePath;
         this.deQueueName = deQueueName;
-        this.userWorkingTime = userWorkingTime;
+        this.userWorkingTimeForSimulate = userWorkingTimeForSimulate;
         this.senderThreads = senderThreads;
     }
 }
@@ -77,16 +80,19 @@ public class CoAgent {
 
 		// 모든 구성 값을 출력합니다.
         if (config != null) {
-            System.out.println("---------- < configuration begin >--------------- ");
-            System.out.println("\t- Log Level: " + config.logLevel);
-            System.out.println("\t- Log File Path: " + config.logFilePath);
-            System.out.println("\t- Result Queue Path: " + config.resultQueuePath);
-            System.out.println("\t- Result Queue Name: " + config.resultQueueName);
-            System.out.println("\t- DeQueue Path: " + config.deQueuePath);
-            System.out.println("\t- DeQueue Name: " + config.deQueueName);
-            System.out.println("\t- User Working Time: " + config.userWorkingTime);
-            System.out.println("\t- Sender Threads: " + config.senderThreads);
-            System.out.println("---------- < configuration end >--------------- ");
+			printConfig( config );
+			Scanner scanner = new Scanner(System.in);
+        	System.out.print("Enter 'y' to continue: ");
+        	String userInput = scanner.nextLine();
+
+			// 사용자 입력이 'y'인지 확인
+			if (userInput.equalsIgnoreCase("y")) {
+				System.out.println("You entered 'y'. Continuing...");
+			} else {
+				System.out.println("You did not enter 'y'. Exiting...");
+				return;
+			}
+			scanner.close();
         }
 
 		// ExecutorService를 사용하여 스레드 생성
@@ -105,7 +111,7 @@ public class CoAgent {
         // 10개의 발송 스레드 생성
         for (int i = 0; i < config.senderThreads; i++) {
             final int threadId = i;
-            executor.execute(() -> processMessages(threadId, config.deQueuePath, config.deQueueName, config.userWorkingTime));
+            executor.execute(() -> processMessages(threadId, config.deQueuePath, config.deQueueName, config.userWorkingTimeForSimulate));
 		}
 
 		executor.shutdown();
@@ -163,7 +169,7 @@ public class CoAgent {
 	}
 
 	// 발송 스래드
-	private static void processMessages( int threadId, String qPath, String qName, int userWorkingTime) {
+	private static void processMessages( int threadId, String qPath, String qName, int userWorkingTimeForSimulate) {
 		int rc;
 
 		// 비정상 종료시 미처리로 남아있던 파일을 처리한다.( 미리 커밋을 했을 경우, 메시지 누락 방지 )
@@ -223,8 +229,8 @@ public class CoAgent {
 				// 
 				///////////////////////////////////////////////////////////// 
 
-				if( userWorkingTime > 0 ) {
-					Thread.sleep(userWorkingTime); // Pause for 1 second
+				if( userWorkingTimeForSimulate > 0 ) {
+					Thread.sleep(userWorkingTimeForSimulate); // Pause for 1 second
 				}
 				if( your_job_result == 1) { // normal data
 					deleteFile(threadId); // 파일 삭제
@@ -319,15 +325,15 @@ public class CoAgent {
             String resultQueueName = doc.getElementsByTagName("resultQueueName").item(0).getTextContent();
             String deQueuePath = doc.getElementsByTagName("deQueuePath").item(0).getTextContent();
             String deQueueName = doc.getElementsByTagName("deQueueName").item(0).getTextContent();
-            String userWorkingTime_str = doc.getElementsByTagName("userWorkingTime").item(0).getTextContent();
-			int userWorkingTime = Integer.parseInt(userWorkingTime_str); 
+            String userWorkingTime_str = doc.getElementsByTagName("userWorkingTimeForSimulate").item(0).getTextContent();
+			int userWorkingTimeForSimulate = Integer.parseInt(userWorkingTime_str); 
 
             String senderThreads_str = doc.getElementsByTagName("senderThreads").item(0).getTextContent();
 			int senderThreads = Integer.parseInt(senderThreads_str); 
 
             // Config 객체를 생성합니다.
             config = new Config(logLevel, logFilePath, resultQueuePath, resultQueueName, 
-                                deQueuePath, deQueueName, userWorkingTime, senderThreads);
+                                deQueuePath, deQueueName, userWorkingTimeForSimulate, senderThreads);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -335,4 +341,17 @@ public class CoAgent {
 
         return config;  // Config 객체 반환
     }
+	// print Config
+	private static void printConfig( Config config) {
+		System.out.println("---------- < configuration begin >--------------- ");
+		System.out.println("\t- Log Level: " + config.logLevel);
+		System.out.println("\t- Log File Path: " + config.logFilePath);
+		System.out.println("\t- Result Queue Path: " + config.resultQueuePath);
+		System.out.println("\t- Result Queue Name: " + config.resultQueueName);
+		System.out.println("\t- DeQueue Path: " + config.deQueuePath);
+		System.out.println("\t- DeQueue Name: " + config.deQueueName);
+		System.out.println("\t- User Working Time for Simulating : " + config.userWorkingTimeForSimulate);
+		System.out.println("\t- Sender Threads: " + config.senderThreads);
+		System.out.println("---------- < configuration end >--------------- ");
+	}
 } // class block end.

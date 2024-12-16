@@ -6,6 +6,6 @@
 	<resultQueueName>XMS_HIST_RSLT</resultQueueName>
 	<deQueuePath>/ums24/wiseu/fq/enmq</deQueuePath>
 	<deQueueName>MY_SM_ONL</deQueueName>
-	<userWorkingTime>1000</userWorkingTime>
+	<userWorkingTimeForSimulate>1000</userWorkingTimeForSimulate>
 	<senderThreads>10</senderThreads>
 </configuration>
