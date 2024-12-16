@@ -9,6 +9,38 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.io.BufferedReader;
 import java.io.FileReader;
+// XML configuration
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.DocumentBuilder;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.Node;
+import org.w3c.dom.Element;
+
+// 구성 값을 저장할 클래스를 정의합니다.
+class Config {
+    String logLevel;
+    String logFilePath;
+    String resultQueuePath;
+    String resultQueueName;
+    String deQueuePath;
+    String deQueueName;
+    int userWorkingTime;
+    int senderThreads;
+
+    // 생성자
+    public Config(String logLevel, String logFilePath, String resultQueuePath, String resultQueueName,
+                  String deQueuePath, String deQueueName, int userWorkingTime, int senderThreads) {
+        this.logLevel = logLevel;
+        this.logFilePath = logFilePath;
+        this.resultQueuePath = resultQueuePath;
+        this.resultQueueName = resultQueueName;
+        this.deQueuePath = deQueuePath;
+        this.deQueueName = deQueueName;
+        this.userWorkingTime = userWorkingTime;
+        this.senderThreads = senderThreads;
+    }
+}
 
 /*
 ** Warning: max buffer size is 65536
@@ -34,31 +66,46 @@ public class CoAgent {
 			System.out.println(String.format("Command Line Argument %d is %s", i, args[i]));
 		}
 
-		if( args.length != 3) {
-			System.out.println("Usage: $ java CoAgent [qpath] [qname] [user_working_time] <enter>");
-			System.out.println("Usage: $ java CoAgent /ums24/wiseu/fq/enmq TST 1000 : 1000 -> 1 second <enter>");
+		if( args.length != 1) {
+			System.out.println("Usage: $ java CoAgent [xml_config_file] <enter>");
+			System.out.println("Usage: $ java CoAgent CoAgentConf.xml <enter>");
 			return;
 		}
-		String qPath = args[0];
-		String qName = args[1];
-		int userWorkingTime = Integer.parseInt(args[2]);
+
+		// 입력받은 경로로 구성 파일을 읽습니다.
+        Config config = readConfigFromFile(args[0]);
+
+		// 모든 구성 값을 출력합니다.
+        if (config != null) {
+            System.out.println("---------- < configuration begin >--------------- ");
+            System.out.println("\t- Log Level: " + config.logLevel);
+            System.out.println("\t- Log File Path: " + config.logFilePath);
+            System.out.println("\t- Result Queue Path: " + config.resultQueuePath);
+            System.out.println("\t- Result Queue Name: " + config.resultQueueName);
+            System.out.println("\t- DeQueue Path: " + config.deQueuePath);
+            System.out.println("\t- DeQueue Name: " + config.deQueueName);
+            System.out.println("\t- User Working Time: " + config.userWorkingTime);
+            System.out.println("\t- Sender Threads: " + config.senderThreads);
+            System.out.println("---------- < configuration end >--------------- ");
+        }
 
 		// ExecutorService를 사용하여 스레드 생성
         ExecutorService resultExecutor = Executors.newFixedThreadPool(1);
 
 		// 1 개의 결과 수신 스레드 생성
-		final int receiveThreadId = THREAD_COUNT+1;
+		final int receiveThreadId = config.senderThreads+1;
+
 		String resultQueueName = "GW_ONL_HIS";
-		resultExecutor.execute(() -> processReceiver(receiveThreadId, qPath, resultQueueName));
+		resultExecutor.execute(() -> processReceiver(receiveThreadId, config.resultQueuePath, config.resultQueueName));
 
 
 		// ExecutorService를 사용하여 스레드 생성
-        ExecutorService executor = Executors.newFixedThreadPool(THREAD_COUNT);
+        ExecutorService executor = Executors.newFixedThreadPool(config.senderThreads + 1);
 
         // 10개의 발송 스레드 생성
-        for (int i = 0; i < THREAD_COUNT; i++) {
+        for (int i = 0; i < config.senderThreads; i++) {
             final int threadId = i;
-            executor.execute(() -> processMessages(threadId, qPath, qName, userWorkingTime));
+            executor.execute(() -> processMessages(threadId, config.deQueuePath, config.deQueueName, config.userWorkingTime));
 		}
 
 		executor.shutdown();
@@ -251,5 +298,41 @@ public class CoAgent {
         } else {
             System.err.println("(" + threadId + ")" + "Failed to delete file: " + fileName);
         }
+    }
+
+	// Loading configuration file
+	public static Config readConfigFromFile(String filePath) {
+        Config config = null;
+
+        try {
+            // XML 파일을 파싱하여 Document 객체를 생성합니다.
+            File inputFile = new File(filePath);
+            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+            Document doc = dBuilder.parse(inputFile);
+            doc.getDocumentElement().normalize();
+
+            // 각 설정 값을 읽어옵니다.
+            String logLevel = doc.getElementsByTagName("logLevel").item(0).getTextContent();
+            String logFilePath = doc.getElementsByTagName("logFilePath").item(0).getTextContent();
+            String resultQueuePath = doc.getElementsByTagName("resultQueuePath").item(0).getTextContent();
+            String resultQueueName = doc.getElementsByTagName("resultQueueName").item(0).getTextContent();
+            String deQueuePath = doc.getElementsByTagName("deQueuePath").item(0).getTextContent();
+            String deQueueName = doc.getElementsByTagName("deQueueName").item(0).getTextContent();
+            String userWorkingTime_str = doc.getElementsByTagName("userWorkingTime").item(0).getTextContent();
+			int userWorkingTime = Integer.parseInt(userWorkingTime_str); 
+
+            String senderThreads_str = doc.getElementsByTagName("senderThreads").item(0).getTextContent();
+			int senderThreads = Integer.parseInt(senderThreads_str); 
+
+            // Config 객체를 생성합니다.
+            config = new Config(logLevel, logFilePath, resultQueuePath, resultQueueName, 
+                                deQueuePath, deQueueName, userWorkingTime, senderThreads);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return config;  // Config 객체 반환
     }
 } // class block end.

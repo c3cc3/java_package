@@ -1,0 +1,11 @@
+<configuration>
+	<!-- Log level can be one of: TRACE:0, DEBUG:1, INFO:2, ERROR:4 -->
+    <logLevel>4</logLevel>
+	<logFilePath>/ums24/wiseu/fq/logs/CoAgent.log</logFilePath>
+	<resultQueuePath>/ums24/wiseu/fq/enmq</resultQueuePath>
+	<resultQueueName>XMS_HIST_RSLT</resultQueueName>
+	<deQueuePath>/ums24/wiseu/fq/enmq</deQueuePath>
+	<deQueueName>MY_SM_ONL</deQueueName>
+	<userWorkingTime>1000</userWorkingTime>
+	<senderThreads>10</senderThreads>
+</configuration>
