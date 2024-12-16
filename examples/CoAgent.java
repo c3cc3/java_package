@@ -1,3 +1,5 @@
+// CoAgent.java
+// 
 import com.clang.fq.*;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -63,10 +65,11 @@ public class CoAgent {
 		resultExecutor.shutdown();
 	}
 
+	// 결과 수집 스래드
 	private static void processReceiver(int threadId, String qPath, String qName)  {
 		int rc;
 
-		FileQueueJNI resultQueue = new FileQueueJNI( threadId, "/tmp/jni.log", 4, qPath, qName);
+		FileQueueJNI resultQueue = new FileQueueJNI( threadId, "/tmp/result_jni.log", 4, qPath, qName);
 		if(  (rc = resultQueue.open()) < 0 ) {
 			System.out.println("open failed: " + "qPath="+qPath + ", qName=" + qName + ", rc=" + rc);
 			return;
@@ -107,9 +110,11 @@ public class CoAgent {
 		}
 	}
 
+	// 발송 스래드
 	private static void processMessages( int threadId, String qPath, String qName, int userWorkingTime) {
 		int rc;
 
+		// 비정상 종료시 미처리로 남아있던 파일을 처리한다.( 미리 커밋을 했을 경우, 메시지 누락 방지 )
 		// recovery 
         String fileName = "thread_" + threadId + ".dat";
 		try {
@@ -126,15 +131,14 @@ public class CoAgent {
 		// 3-th argument is loglevel. (0: trace, 1: debug, 2: info, 3: Warning, 4: error, 5: emerg, 6: request)
 		// Use 1 in dev and 4 prod.
 
-		FileQueueJNI queue = new FileQueueJNI( threadId, "/tmp/jni.log", 4, qPath, qName);
+		FileQueueJNI queue = new FileQueueJNI( threadId, "/tmp/sender_jni.log", 4, qPath, qName);
 		if(  (rc = queue.open()) < 0 ) {
 			System.out.println("open failed: " + "qPath="+qPath + ", qName=" + qName + ", rc=" + rc);
 			return;
 		}
 
 		try {
-			
-			// 메시지를 계속해서 처리
+			// 무한반복 ( daemon )
 			while (true) {
 				int read_rc = 0;
 
@@ -179,9 +183,10 @@ public class CoAgent {
 				}
 			}
 		} catch (InterruptedException ex) {
-        	queue.close();
 			Thread.currentThread().interrupt();
 			System.out.println("Thread " + threadId + " interrupted.");
+		} finally {
+        	queue.close();
 		}
 	} 
 
