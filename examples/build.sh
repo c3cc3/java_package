@@ -2,3 +2,5 @@ set -x
 javac -classpath ./../lib/FileQueueJNI.jar:.:./../lib/jackson-core-2.15.2.jar:./../lib/jackson-databind-2.17.3.jar:./../lib/jackson-annotations-2.18.2.jar:./../lib/json-20210307.jar TestDeQXA.java
 javac -classpath ./../lib/FileQueueJNI.jar:.::./../lib/jackson-core-2.15.2.jar:./../lib/jackson-databind-2.17.3.jar:./../lib/jackson-annotations-2.18.2.jar./../lib/json-20210307.jar TestEnQ_loop.java
 javac -classpath ./../lib/FileQueueJNI.jar:.::./../lib/jackson-core-2.15.2.jar:./../lib/jackson-databind-2.17.3.jar:./../lib/jackson-annotations-2.18.2.jar./../lib/json-20210307.jar CoAgent.java
+javac -classpath ./../lib/FileQueueJNI.jar:.::./../lib/jackson-core-2.15.2.jar:./../lib/jackson-databind-2.17.3.jar:./../lib/jackson-annotations-2.18.2.jar./../lib/json-20210307.jar SocketServer.java
+javac -classpath ./../lib/FileQueueJNI.jar:.::./../lib/jackson-core-2.15.2.jar:./../lib/jackson-databind-2.17.3.jar:./../lib/jackson-annotations-2.18.2.jar./../lib/json-20210307.jar EchoClient.java
