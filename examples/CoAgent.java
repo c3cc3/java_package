@@ -20,6 +20,11 @@ import org.w3c.dom.Element;
 // for your input
 import java.util.Scanner;
 
+// JSON
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+
 // 구성 값을 저장할 클래스를 정의합니다.
 class Config {
     String logLevel;
@@ -284,8 +289,13 @@ public class CoAgent {
     }
 
     // my job
-    private static int  DoMessage(int threadId, int rc, long out_seq, long out_run_time, String message) {
-	    System.out.println("(" + threadId + ")" + "data read success:" + " rc: " + rc + " msg: " + message + " seq: " + out_seq + " run_time(micro seconds): " + out_run_time);
+    private static int  DoMessage(int threadId, int rc, long out_seq, long out_run_time, String jsonMessage) {
+		boolean tf=JsonParserAndVerify ( threadId, jsonMessage );
+		if( tf == false ) {
+			return 0;
+		}
+
+	    System.out.println("(" + threadId + ")" + "data read success:" + " rc: " + rc + " msg: " + jsonMessage + " seq: " + out_seq + " run_time(micro seconds): " + out_run_time);
 		return 1;
     }
 
@@ -354,4 +364,64 @@ public class CoAgent {
 		System.out.println("\t- Sender Threads: " + config.senderThreads);
 		System.out.println("---------- < configuration end >--------------- ");
 	}
+	private static boolean JsonParserAndVerify ( int threadId, String jsonString ) {
+        // JSON 문자열 입력
+        // String jsonString = "{\"name\":\"John\", \"age\":30, \"city\":\"New York\"}";
+
+        // ObjectMapper 인스턴스를 생성합니다.
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        try {
+            // JSON 문자열을 JsonNode로 파싱합니다.
+            JsonNode jsonNode = objectMapper.readTree(jsonString);
+
+            // JSON 검증: 필수 필드가 있는지 확인
+            if (jsonNode.hasNonNull("SEQ") 
+				// && jsonNode.hasNonNull("CHANNEL")
+				// && jsonNode.hasNonNull("MSG_TYPE")
+				// && jsonNode.hasNonNull("RECEIVER")
+				// && jsonNode.hasNonNull("SENDER")
+				// && jsonNode.hasNonNull("BRAND_ID")
+				// && jsonNode.hasNonNull("BRAND_KEY")
+				// && jsonNode.hasNonNull("MESSAGEBASE_ID")
+				// && jsonNode.hasNonNull("HEADER")
+				// && jsonNode.hasNonNull("FOOTER")
+				// && jsonNode.hasNonNull("COPYALLOWED")
+				// && jsonNode.hasNonNull("MESSAGE")
+				// && jsonNode.hasNonNull("BOTTONS")
+			) {
+                // 필드들이 존재하므로 데이터를 읽습니다.
+                String seq = jsonNode.get("SEQ").asText();
+				/*
+                String channel = jsonNode.get("CHANNEL").asText();
+                String msgType = jsonNode.get("MSG_TYPE").asText();
+                String receiver = jsonNode.get("RECEIVER").asText();
+                String sender = jsonNode.get("SENDEER").asText();
+                String brandId = jsonNode.get("BRAND_ID").asText();
+                String brandKey = jsonNode.get("BRAND_KEY").asText();
+                String messageId = jsonNode.get("MESSAGEBASE_ID").asText();
+                String header = jsonNode.get("HEADER").asText();
+                String footer = jsonNode.get("FOOTER").asText();
+                String copyAllowed = jsonNode.get("COPYALLOWED").asText();
+                String message = jsonNode.get("MESSAGE").asText();
+				*/
+                // String bottons = jsonNode.get("BOTTONS").asText();
+                // int channel = jsonNode.get("CHANNEL").asInt();
+                // String city = jsonNode.get("city").asText();
+				// boolean isActive = jsonNode.get("isActive").asBoolean();
+
+            	System.out.println("-------------------------- OK ------------------------");
+            	System.out.println("(" + threadId + ")" + "SEQ: " + seq);
+				return true;
+            } else {
+            	System.out.println("--------------------------ERROR------------------------");
+            	System.out.println("(" + threadId + ")" + "Invalid JSON: missing required fields");
+				return false;
+            }
+        } catch (Exception e) {
+            // JSON 파싱 중 예외가 발생했을 경우
+            System.err.println("Error verifying or parsing JSON: " + e.getMessage());
+			return false;
+        }
+    }
 } // class block end.
