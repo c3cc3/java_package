@@ -1,0 +1,19 @@
+{
+"SEQ": "RS202410010742510000",
+"SVC_ID": "111111",
+"CHANNEL": "RC",
+"MSG_TYPE": "RS",
+"RECEIVER": "01072021516",
+"SENDER": "0269568388",
+"BRAND_ID": "BR.Jk1sn3h123",
+"BRAND_KEY": "DR.kkkkkJk1sn3h123",
+"MESSAGEBASE_ID": "SS000000",
+"HEADER": "0",
+"FOOTER": "1",
+"COPYALLOWED": true,
+"MESSAGE": "{\"description\": \"aaaa\"}",
+"ALIM_SAVE_YN":"N",
+"ALIM_IMP_YN":"N",
+"ALIM_SUBJECT":"",
+"EXTRA":""
+}
