@@ -3,7 +3,7 @@
     <logLevel>4</logLevel>
 	<logFilePath>/ums24/wiseu/fq/logs/CoAgent.log</logFilePath>
 	<resultQueuePath>/ums24/wiseu/fq/enmq</resultQueuePath>
-	<resultQueueName>XMS_HIST_RSLT</resultQueueName>
+	<resultQueueName>RCS_HIST_RSLT</resultQueueName>
 	<deQueuePath>/ums24/wiseu/fq/enmq</deQueuePath>
 	<deQueueName>MY_SM_ONL</deQueueName>
 	<userWorkingTimeForSimulate>10</userWorkingTimeForSimulate>
