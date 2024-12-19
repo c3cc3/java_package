@@ -24,6 +24,9 @@ import java.util.Scanner;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+// socket
+import java.io.*;
+import java.net.*;
 
 // 구성 값을 저장할 클래스를 정의합니다.
 class Config {
@@ -35,10 +38,13 @@ class Config {
     String deQueueName;
     int userWorkingTimeForSimulate;
     int senderThreads;
+	String	serverIp;
+	int		serverPort;
 
     // 생성자
     public Config(String logLevel, String logFilePath, String resultQueuePath, String resultQueueName,
-                  String deQueuePath, String deQueueName, int userWorkingTimeForSimulate, int senderThreads) {
+                  String deQueuePath, String deQueueName, int userWorkingTimeForSimulate, int senderThreads,
+				  String serverIp, int serverPort) {
         this.logLevel = logLevel;
         this.logFilePath = logFilePath;
         this.resultQueuePath = resultQueuePath;
@@ -47,6 +53,8 @@ class Config {
         this.deQueueName = deQueueName;
         this.userWorkingTimeForSimulate = userWorkingTimeForSimulate;
         this.senderThreads = senderThreads;
+        this.serverIp = serverIp;
+        this.serverPort = serverPort;
     }
 }
 
@@ -99,6 +107,17 @@ public class CoAgent {
 			}
 			scanner.close();
         }
+		// Connect to server.
+		try (
+			Socket socket = new Socket(config.serverIp, config.serverPort);
+			PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+			BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream())) )  
+		{
+			System.out.println("Connected to the server.");
+		} catch (IOException e) {
+			e.printStackTrace();
+			return;
+		}
 
 		// ExecutorService를 사용하여 스레드 생성
         ExecutorService resultExecutor = Executors.newFixedThreadPool(1);
@@ -335,15 +354,23 @@ public class CoAgent {
             String resultQueueName = doc.getElementsByTagName("resultQueueName").item(0).getTextContent();
             String deQueuePath = doc.getElementsByTagName("deQueuePath").item(0).getTextContent();
             String deQueueName = doc.getElementsByTagName("deQueueName").item(0).getTextContent();
+
             String userWorkingTime_str = doc.getElementsByTagName("userWorkingTimeForSimulate").item(0).getTextContent();
 			int userWorkingTimeForSimulate = Integer.parseInt(userWorkingTime_str); 
 
             String senderThreads_str = doc.getElementsByTagName("senderThreads").item(0).getTextContent();
 			int senderThreads = Integer.parseInt(senderThreads_str); 
 
+            String serverIp = doc.getElementsByTagName("serverIp").item(0).getTextContent();
+
+            String serverPort_str = doc.getElementsByTagName("serverPort").item(0).getTextContent();
+			int serverPort = Integer.parseInt(serverPort_str); 
+
+
             // Config 객체를 생성합니다.
             config = new Config(logLevel, logFilePath, resultQueuePath, resultQueueName, 
-                                deQueuePath, deQueueName, userWorkingTimeForSimulate, senderThreads);
+                                deQueuePath, deQueueName, userWorkingTimeForSimulate, senderThreads,
+								serverIp, serverPort );
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -362,6 +389,8 @@ public class CoAgent {
 		System.out.println("\t- DeQueue Name: " + config.deQueueName);
 		System.out.println("\t- User Working Time for Simulating : " + config.userWorkingTimeForSimulate);
 		System.out.println("\t- Sender Threads: " + config.senderThreads);
+		System.out.println("\t- Server IP for Simulating : " + config.serverIp);
+		System.out.println("\t- Server PORT for Simulating : " + config.serverPort);
 		System.out.println("---------- < configuration end >--------------- ");
 	}
 	private static boolean JsonParserAndVerify ( int threadId, String jsonString ) {
