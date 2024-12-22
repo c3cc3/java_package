@@ -20,9 +20,15 @@ import org.w3c.dom.Element;
 // for your input
 import java.util.Scanner;
 
-// JSON
+// JSON library: jackson
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+// import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import java.util.HashMap;
+import java.util.Map;
+
+// json Object
+import org.json.JSONObject;
 
 // socket
 import java.io.*;
@@ -31,6 +37,9 @@ import java.net.*;
 // log4j
 import org.apache.log4j.Logger; // Log4j import
 
+// Get current time // yyyymmddHHMMSS
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 // 구성 값을 저장할 클래스를 정의합니다.
 class Config {
@@ -151,7 +160,7 @@ public class CoAgent {
 		while(true) {
 			// 실제로는 이곳에 통신사로 부터 받는 소켓 수신 코드가 들어가야 함.
 			// enQueueData = receiveResult(socket);
-			String enQueueData = "This is a result(JSON).";
+			String enQueueData = null;
 			// 이곳에도 받은 데이터 분실에 대비한 save 루틴이 필요할 수도 있지만
 			// enQ 가 워낙 빠르기 때문에 실제로 불필요 함.
 
@@ -167,36 +176,59 @@ public class CoAgent {
 			}
 			*/
 
-			int write_rc = resultQueue.write( enQueueData );
+			// 새로운 JSON 생성
+            JSONObject resultJson = new JSONObject();
 
-			if( write_rc < 0 ) {
-				logger.error("Write failed: " + resultQueue.path + "," + resultQueue.qname + "," + " rc: " + write_rc);
-				resultQueue.close();
-				return;
-			}
-			else if( write_rc == 0 ) { // queue is full
-				logger.info("full: " + resultQueue.path + "," + resultQueue.qname + "," + " rc: " + write_rc);
-				try {
-					Thread.sleep(10); // Pause for 1 second (1000)
-				}
-				catch(InterruptedException ex) {
-				    Thread.currentThread().interrupt();
-			    }
-				continue;
-			}
-			else {
-				long out_seq = resultQueue.get_out_seq();
-				long out_run_time = resultQueue.get_out_run_time();
 
-				System.out.println("("+threadId+")->receive thread:"+ "enQ success: " + "seq=" + out_seq + "," + "rc:" + write_rc);
-				try {
-					Thread.sleep(100); // Pause for 1 second (1000)
+			resultJson.put("HISTORY_KEY", "RANDOM_KEY_0000000");
+			resultJson.put("RESP_KIND", 30);
+			resultJson.put("STATUS_CODE", "1");
+			resultJson.put("RESULT_CODE", "0000");
+			resultJson.put("RCS_MESSAGE", "success");
+
+			String currentDateTime = getCurrentTime(); // 현재 시간을 가져오는 방법이 구현돼 있어야 함
+			resultJson.put("RCS_SND_DTM", currentDateTime);
+			resultJson.put("RCS_RCCP_DTM", currentDateTime);
+			resultJson.put("AGENT_CODE", "MY");
+
+			String jsonString = resultJson.toString();
+			logger.debug("Generated JSON: " + jsonString);
+
+			try {
+				int write_rc = resultQueue.write( jsonString );
+
+				if( write_rc < 0 ) {
+					logger.error("Write failed: " + resultQueue.path + "," + resultQueue.qname + "," + " rc: " + write_rc);
+					resultQueue.close();
+					return;
 				}
-				catch(InterruptedException ex) {
-				        Thread.currentThread().interrupt();
-			    }
-				continue;
+				else if( write_rc == 0 ) { // queue is full
+					logger.info("full: " + resultQueue.path + "," + resultQueue.qname + "," + " rc: " + write_rc);
+					try {
+						Thread.sleep(10); // Pause for 1 second (1000)
+					}
+					catch(InterruptedException ex) {
+						Thread.currentThread().interrupt();
+					}
+					continue;
+				}
+				else {
+					long out_seq = resultQueue.get_out_seq();
+					long out_run_time = resultQueue.get_out_run_time();
+
+					System.out.println("("+threadId+")->receive thread:"+ "enQ success: " + "seq=" + out_seq + "," + "rc:" + write_rc);
+					try {
+						Thread.sleep(100); // Pause for 1 second (1000)
+					}
+					catch(InterruptedException ex) {
+							Thread.currentThread().interrupt();
+					}
+					continue;
+				}
+			} catch (Exception e) {
+				logger.error("("+threadId+")"+ "resultQueue.write() 오류: " + e.getMessage());
 			}
+
 		}
 	}
 
@@ -282,6 +314,8 @@ public class CoAgent {
 
 					writeMessageToFile(threadId, data); // 파일에 메시지 쓰기
 					logger.debug("("+threadId+")"+ "backup file writing success");
+					queue.commitXA();
+					logger.debug("("+threadId+")"+ "normal data: commitXA() sucesss seq : " + out_seq);
 
 					int your_job_result = DoMessage(threadId, read_rc, out_seq, out_run_time,  data, out_socket, in_socket, ackQueue ); // 화면에 메시지 출력
 
@@ -297,8 +331,7 @@ public class CoAgent {
 */
 					if( your_job_result == 1) { // normal data
 						deleteFile(threadId); // 파일 삭제
-						queue.commitXA();
-						logger.debug("("+threadId+")"+ "normal data: commitXA() sucesss seq : " + out_seq);
+						logger.debug("("+threadId+")"+ "deleteFile() sucesss seq : " + out_seq);
 					}
 					else { // abnormal data
 						queue.cancelXA();
@@ -314,6 +347,7 @@ public class CoAgent {
 				queue.close();
 			}
 		} catch (IOException e) {
+            logger.error("(" + threadId + ")" + "socket:" + e.getMessage());
 			e.printStackTrace();
 			return;
 		}
@@ -586,5 +620,17 @@ public class CoAgent {
             System.err.println("Error verifying or parsing JSON: " + e.getMessage());
 			return false;
         }
+    }
+
+	// 현재 시간을 "yyyyMMddHHmmss" 형식으로 문자열로 반환
+    public static String getCurrentTime() {
+        // 현재 날짜 및 시간 얻기
+        LocalDateTime now = LocalDateTime.now();
+        
+        // 원하는 형식으로 포맷터 생성
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+        
+        // 포맷팅된 문자열 반환
+        return now.format(formatter);
     }
 } // class block end.
