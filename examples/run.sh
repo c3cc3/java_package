@@ -1,1 +1,1 @@
-java -cp ./../lib/FileQueueJNI.jar:.:./../lib/json-20210307.jar:./../lib/jackson-core-2.15.2.jar:./../lib/jackson-databind-2.17.3.jar:./../lib/jackson-annotations-2.18.2.jar CoAgent ./CoAgentConf.xml
+java -cp ./../lib/FileQueueJNI.jar:.:./../lib/json-20210307.jar:./../lib/jackson-core-2.15.2.jar:./../lib/jackson-databind-2.17.3.jar:./../lib/jackson-annotations-2.18.2.jar:./../lib/log4j-1.2.17.jar CoAgent ./CoAgentConf.xml
