@@ -72,10 +72,10 @@ public class CoAgent {
 		System.loadLibrary("fq");
 	}
 	CoAgent () {
-
 	}
 
 	private static final int THREAD_COUNT = 10;
+	private static final Logger logger = Logger.getLogger(CoAgent.class); // Logger 인스턴스
  
 	// Test Driver
 	public static void main(String[] args) {
@@ -91,6 +91,7 @@ public class CoAgent {
 			System.out.println("Usage: $ java CoAgent CoAgentConf.xml <enter>");
 			return;
 		}
+
 
 		// 입력받은 경로로 구성 파일을 읽습니다.
         Config config = readConfigFromFile(args[0]);
@@ -112,29 +113,28 @@ public class CoAgent {
 			scanner.close();
         }
 
-			System.out.println("Connected to the server.");
 
-			// ExecutorService를 사용하여 스레드 생성
-			ExecutorService resultExecutor = Executors.newFixedThreadPool(1);
+		// ExecutorService를 사용하여 스레드 생성
+		ExecutorService resultExecutor = Executors.newFixedThreadPool(1);
 
-			// 1 개의 결과 수신 스레드 생성
-			final int receiveThreadId = config.senderThreads+1;
+		// 1 개의 결과 수신 스레드 생성
+		final int receiveThreadId = config.senderThreads+1;
 
-			String resultQueueName = "GW_ONL_HIS";
-			resultExecutor.execute(() -> processResultReceiver(receiveThreadId, config.resultQueuePath, config.resultQueueName));
+		String resultQueueName = "GW_ONL_HIS";
+		resultExecutor.execute(() -> processResultReceiver(receiveThreadId, config.resultQueuePath, config.resultQueueName));
 
 
-			// ExecutorService를 사용하여 스레드 생성
-			ExecutorService executor = Executors.newFixedThreadPool(config.senderThreads + 1);
+		// ExecutorService를 사용하여 스레드 생성
+		ExecutorService executor = Executors.newFixedThreadPool(config.senderThreads + 1);
 
-			// 10개의 발송 스레드 생성
-			for (int i = 0; i < config.senderThreads; i++) {
-				final int threadId = i;
-				executor.execute(() -> processMessages(config.serverIp, config.serverPort, threadId, config.deQueuePath, config.deQueueName, config.resultQueuePath, config.resultQueueName, config.userWorkingTimeForSimulate));
-			}
+		// 10개의 발송 스레드 생성
+		for (int i = 0; i < config.senderThreads; i++) {
+			final int threadId = i;
+			executor.execute(() -> processMessages(config.serverIp, config.serverPort, threadId, config.deQueuePath, config.deQueueName, config.resultQueuePath, config.resultQueueName, config.userWorkingTimeForSimulate));
+		}
 
-			executor.shutdown();
-			resultExecutor.shutdown();
+		executor.shutdown();
+		resultExecutor.shutdown();
 
 	}
 
@@ -237,6 +237,8 @@ public class CoAgent {
 			DataOutputStream out_socket = new DataOutputStream(socket.getOutputStream());
 			DataInputStream in_socket = new DataInputStream(socket.getInputStream()) )  
 		{
+			logger.info("("+threadId+")"+ "Connected to the echo server." + ", IP=" + serverIp + ", PORT=" + serverPort );
+
 			// 비정상 종료시 미처리로 남아있던 파일을 처리한다.( 미리 커밋을 했을 경우, 메시지 누락 방지 )
 			// recovery 
 			String fileName = "thread_" + threadId + ".dat";
@@ -247,7 +249,7 @@ public class CoAgent {
 					int  recovery_result = RecoveryMessage(threadId, backupMsg, out_socket ); // 화면에 메시지 출력
 				}
 			} catch (IOException e) {
-				System.err.println("backup recovery 오류: " + e.getMessage());
+				System.err.println("("+threadId+")"+ "backup recovery 오류: " + e.getMessage());
 			}
 
 			try {
