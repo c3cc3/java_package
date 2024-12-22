@@ -392,10 +392,15 @@ public class CoAgent {
     private static boolean  DoMessage(int threadId, int rc, long out_seq, long out_run_time, String jsonMessage, DataOutputStream out_socket, DataInputStream in_socket, FileQueueJNI ackQueue ) {
 
 
-		boolean tf=JsonParserAndVerify ( threadId, jsonMessage );
+		boolean healthCheckFlag = false;
+		boolean tf=JsonParserAndVerify ( threadId, jsonMessage, healthCheckFlag );
 		if( tf == false ) {
             logger.error("(" + threadId + ")" + "JdonParerAndVerify() interrupted.");
 			return false;
+		}
+		if( healthCheckFlag == true) {
+            logger.info("(" + threadId + ")" + "Health checking message.");
+			return true;
 		}
 
 	    logger.debug("(" + threadId + ")" + "data read success:" + " rc: " + rc + " msg: " + jsonMessage + " seq: " + out_seq + " run_time(micro seconds): " + out_run_time);
@@ -554,7 +559,7 @@ public class CoAgent {
 		System.out.println("\t- Server PORT for Simulating : " + config.serverPort);
 		System.out.println("---------- < configuration end >--------------- ");
 	}
-	private static boolean JsonParserAndVerify ( int threadId, String jsonString ) {
+	private static boolean JsonParserAndVerify ( int threadId, String jsonString, boolean hcFlag ) {
         // JSON 문자열 입력
         // String jsonString = "{\"name\":\"John\", \"age\":30, \"city\":\"New York\"}";
 
@@ -610,6 +615,10 @@ public class CoAgent {
             	System.out.println("\t-(" + threadId + ")" + "BRAND_KEY: " + brandKey);
             	System.out.println("\t-(" + threadId + ")" + "MESSAGEBASE_ID: " + messageBaseId);
             	System.out.println("\t-(" + threadId + ")" + "MESSAGE: " + message);
+
+				if (channel.equalsIgnoreCase("HC")) { // is health checking.
+					hcFlag = true;
+				}
 				return true;
             } else {
             	System.out.println("--------------------------JSON Check ERROR------------------------");
