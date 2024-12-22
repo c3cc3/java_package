@@ -317,7 +317,7 @@ public class CoAgent {
 					queue.commitXA();
 					logger.debug("("+threadId+")"+ "normal data: commitXA() sucesss seq : " + out_seq);
 
-					int your_job_result = DoMessage(threadId, read_rc, out_seq, out_run_time,  data, out_socket, in_socket, ackQueue ); // 화면에 메시지 출력
+					boolean your_job_result = DoMessage(threadId, read_rc, out_seq, out_run_time,  data, out_socket, in_socket, ackQueue ); // 화면에 메시지 출력
 
 					// input your jobs in here ///////////////////////////////////
 					// 
@@ -329,7 +329,7 @@ public class CoAgent {
 						Thread.sleep(userWorkingTimeForSimulate); // Pause for 1 second
 					}
 */
-					if( your_job_result == 1) { // normal data
+					if( your_job_result == true) { // normal data
 						deleteFile(threadId); // 파일 삭제
 						logger.debug("("+threadId+")"+ "deleteFile() sucesss seq : " + out_seq);
 					}
@@ -389,13 +389,13 @@ public class CoAgent {
     }
 
     // DeQ and send message to server.
-    private static int  DoMessage(int threadId, int rc, long out_seq, long out_run_time, String jsonMessage, DataOutputStream out_socket, DataInputStream in_socket, FileQueueJNI ackQueue ) {
+    private static boolean  DoMessage(int threadId, int rc, long out_seq, long out_run_time, String jsonMessage, DataOutputStream out_socket, DataInputStream in_socket, FileQueueJNI ackQueue ) {
 
 
 		boolean tf=JsonParserAndVerify ( threadId, jsonMessage );
 		if( tf == false ) {
             logger.error("(" + threadId + ")" + "JdonParerAndVerify() interrupted.");
-			return 0;
+			return false;
 		}
 
 	    logger.debug("(" + threadId + ")" + "data read success:" + " rc: " + rc + " msg: " + jsonMessage + " seq: " + out_seq + " run_time(micro seconds): " + out_run_time);
@@ -432,7 +432,7 @@ public class CoAgent {
 					if( write_rc < 0 ) {
 						logger.error("("+threadId+")"+ "Write failed: " + ackQueue.path + "," + ackQueue.qname + "," + " rc: " + write_rc);
 						ackQueue.close();
-						return write_rc;
+						return false;
 					}
 					else if( write_rc == 0 ) { // queue is full
 						logger.debug("("+threadId+")" + "full: " + ackQueue.path + "," + ackQueue.qname + "," + " rc: " + write_rc);
@@ -465,7 +465,7 @@ public class CoAgent {
 			e.printStackTrace();
 		}
 
-		return 1;
+		return true;
     }
 
     // my job
