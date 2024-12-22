@@ -170,17 +170,17 @@ public class CoAgent {
 			int write_rc = resultQueue.write( enQueueData );
 
 			if( write_rc < 0 ) {
-				System.out.println("Write failed: " + resultQueue.path + "," + resultQueue.qname + "," + " rc: " + write_rc);
+				logger.error("Write failed: " + resultQueue.path + "," + resultQueue.qname + "," + " rc: " + write_rc);
 				resultQueue.close();
 				return;
 			}
 			else if( write_rc == 0 ) { // queue is full
-				System.out.println("full: " + resultQueue.path + "," + resultQueue.qname + "," + " rc: " + write_rc);
+				logger.info("full: " + resultQueue.path + "," + resultQueue.qname + "," + " rc: " + write_rc);
 				try {
 					Thread.sleep(10); // Pause for 1 second (1000)
 				}
 				catch(InterruptedException ex) {
-				        Thread.currentThread().interrupt();
+				    Thread.currentThread().interrupt();
 			    }
 				continue;
 			}
@@ -188,7 +188,7 @@ public class CoAgent {
 				long out_seq = resultQueue.get_out_seq();
 				long out_run_time = resultQueue.get_out_run_time();
 
-				System.out.println("("+threadId+")"+ "enQ success: " + "seq=" + out_seq + "," + "rc:" + write_rc);
+				System.out.println("("+threadId+")->receive thread:"+ "enQ success: " + "seq=" + out_seq + "," + "rc:" + write_rc);
 				try {
 					Thread.sleep(100); // Pause for 1 second (1000)
 				}
@@ -222,13 +222,13 @@ public class CoAgent {
 
 		FileQueueJNI queue = new FileQueueJNI( threadId, "/tmp/sender_jni.log", 4, qPath, qName);
 		if(  (rc = queue.open()) < 0 ) {
-			System.out.println("open failed: " + "qPath="+qPath + ", qName=" + qName + ", rc=" + rc);
+			logger.error("("+threadId+")"+ "open failed: " + "qPath="+qPath + ", qName=" + qName + ", rc=" + rc);
 			return;
 		}
 
 		FileQueueJNI ackQueue = new FileQueueJNI( threadId+20, "/tmp/sender_ack_jni.log", 4, ackQueuePath , ackQueueName);
 		if(  (rc = ackQueue.open()) < 0 ) {
-			System.out.println("open failed: " + " ackQueuePath="+ ackQueuePath + ", ackQueueName=" + ackQueueName + ", rc=" + rc);
+			logger.error("("+threadId+")"+ "open failed: " + " ackQueuePath="+ ackQueuePath + ", ackQueueName=" + ackQueueName + ", rc=" + rc);
 			return;
 		}
 
@@ -246,11 +246,15 @@ public class CoAgent {
 				String backupMsg = readFileIfExists( fileName );
 
 				if( backupMsg != null ) {
-					int  recovery_result = RecoveryMessage(threadId, backupMsg, out_socket ); // 화면에 메시지 출력
+					boolean  recoveryResult = RecoveryMessage(threadId, backupMsg, out_socket ); // 화면에 메시지 출력
+					if( recoveryResult == false ) {
+						logger.error("("+threadId+")"+ "backup recovery -> false ");
+						return;
+					}
 				}
 			} catch (IOException e) {
-				System.err.println("("+threadId+")"+ "backup recovery 오류: " + e.getMessage());
-				logger.error("("+threadId+")"+ "Connected to the echo server." + ", IP=" + serverIp + ", PORT=" + serverPort );
+				logger.error("("+threadId+")"+ "backup recovery 오류: " + e.getMessage());
+				return;
 			}
 
 			try {
@@ -265,12 +269,10 @@ public class CoAgent {
 					}
 
 					if( read_rc == 0 ) {
-						System.out.println("("+threadId+")"+ "There is no data(empty) : " + queue.path + "," + queue.qname + "," + " rc: " + read_rc);
 						logger.debug("("+threadId+")"+ "There is no data(empty) : " + queue.path + "," + queue.qname + "," + " rc: " + read_rc);
 						Thread.sleep(1000); // Pause for 1 second
 						continue;
 					}
-
 
 					String data = queue.get_out_msg();
 					long out_seq = queue.get_out_seq();
@@ -279,6 +281,7 @@ public class CoAgent {
 
 
 					writeMessageToFile(threadId, data); // 파일에 메시지 쓰기
+					logger.debug("("+threadId+")"+ "backup file writing success");
 
 					int your_job_result = DoMessage(threadId, read_rc, out_seq, out_run_time,  data, out_socket, in_socket, ackQueue ); // 화면에 메시지 출력
 
@@ -303,7 +306,8 @@ public class CoAgent {
 				}
 			} catch (InterruptedException ex) {
 				Thread.currentThread().interrupt();
-				System.out.println("Thread " + threadId + " interrupted.");
+				logger.error("Thread " + threadId + " interrupted.");
+				
 			} finally {
 				queue.close();
 			}
@@ -344,18 +348,21 @@ public class CoAgent {
             writer.newLine();
             writer.flush();
         } catch (IOException e) {
-            System.err.println("(" + threadId + ")" + "Error writing to file: " + e.getMessage());
+            logger.error("(" + threadId + ")" + "Error writing to file: " + e.getMessage());
         }
     }
 
     // DeQ and send message to server.
     private static int  DoMessage(int threadId, int rc, long out_seq, long out_run_time, String jsonMessage, DataOutputStream out_socket, DataInputStream in_socket, FileQueueJNI ackQueue ) {
+
+
 		boolean tf=JsonParserAndVerify ( threadId, jsonMessage );
 		if( tf == false ) {
+            logger.error("(" + threadId + ")" + "JdonParerAndVerify() interrupted.");
 			return 0;
 		}
 
-	    System.out.println("(" + threadId + ")" + "data read success:" + " rc: " + rc + " msg: " + jsonMessage + " seq: " + out_seq + " run_time(micro seconds): " + out_run_time);
+	    logger.debug("(" + threadId + ")" + "data read success:" + " rc: " + rc + " msg: " + jsonMessage + " seq: " + out_seq + " run_time(micro seconds): " + out_run_time);
 
 
 		// 메시지를 바이트 배열로 변환 후 길이와 함께 전송
@@ -364,10 +371,11 @@ public class CoAgent {
 			out_socket.writeInt( data.length ); // 길이 Prefix header 전송
 			out_socket.write( data ); // 서버에 메시지 전송
 		} catch( IOException e) {
+            logger.error("(" + threadId + ")" + "socket.write:" + e.getMessage());
 			e.printStackTrace();
 		}
 
-		System.out.println("(" + threadId + ")" + "data send success");
+		logger.info("(" + threadId + ")" + "data send success.");
 
 		// We receive ACK from server.
 		try {
@@ -380,19 +388,20 @@ public class CoAgent {
 				in_socket.readFully( receiveData, 0, responseLength);
 
 				String serverResponse = new String(receiveData);
-				System.out.println("("+threadId+")" + "Server response(ACK): " + serverResponse);
+				logger.info("("+threadId+")" + "received server response(ACK): " + serverResponse);
 
 				while(true) {
 					int write_rc = ackQueue.write( serverResponse );
 
 					if( write_rc < 0 ) {
-						System.out.println("("+threadId+")"+ "Write failed: " + ackQueue.path + "," + ackQueue.qname + "," + " rc: " + write_rc);
+						logger.error("("+threadId+")"+ "Write failed: " + ackQueue.path + "," + ackQueue.qname + "," + " rc: " + write_rc);
 						ackQueue.close();
 						return write_rc;
 					}
 					else if( write_rc == 0 ) { // queue is full
-						System.out.println("("+threadId+")" + "full: " + ackQueue.path + "," + ackQueue.qname + "," + " rc: " + write_rc);
+						logger.debug("("+threadId+")" + "full: " + ackQueue.path + "," + ackQueue.qname + "," + " rc: " + write_rc);
 						try {
+							// We retry to enQ after 1/10 secondes
 							Thread.sleep(10); // Pause for 1 second (1000)
 						}
 						catch(InterruptedException ex) {
@@ -404,7 +413,7 @@ public class CoAgent {
 						long writeOutSeq = ackQueue.get_out_seq();
 						long writeRunTime = ackQueue.get_out_run_time();
 
-						System.out.println("("+threadId+")"+ "enQ(ACK) success: " + "seq=" + writeOutSeq + "," + "rc:" + write_rc);
+						logger.info("("+threadId+")"+ "enQ(ACK) success: " + "seq=" + writeOutSeq + "," + "rc:" + write_rc);
 						try {
 							Thread.sleep(100); // Pause for 1 second (1000)
 						}
@@ -416,6 +425,7 @@ public class CoAgent {
 				}
 			}
 		} catch( IOException e ) {
+            logger.error("(" + threadId + ")" + "socket.receive and enQ:" + e.getMessage());
 			e.printStackTrace();
 		}
 
@@ -423,20 +433,19 @@ public class CoAgent {
     }
 
     // my job
-    private static int  RecoveryMessage(int threadId, String message, DataOutputStream out_socket) {
+    private static boolean  RecoveryMessage(int threadId, String message, DataOutputStream out_socket) {
 	    System.out.println("(" + threadId + ")" + "recovery :"  + message);
 
 		try {
 			byte[] data = message.getBytes();
 			out_socket.writeInt(data.length); // 길이헤더 전송
 			out_socket.write(data); // 서버에 메시지 전송
-			System.out.println("("+threadId+")"+ "Recovery data sending success: " + data);
+			logger.info("("+threadId+")"+ "Recovery data sending success: " + data);
+			return true;
 		} catch( IOException e) {
-			e.printStackTrace();
-			return 0;
+            logger.error("(" + threadId + ")" + "socket.write:" + e.getMessage());
+			return false;
 		}
-		
-		return 1;
     }
 
     // 스레드 ID에 따른 파일 삭제
@@ -444,10 +453,11 @@ public class CoAgent {
         String fileName = "thread_" + threadId + ".txt";
         File file = new File(fileName);
         if (file.delete()) {
-            System.out.println("(" + threadId + ")" + "Deleted file: " + fileName);
+            logger.info("(" + threadId + ")" + "Deleted file: " + fileName);
         } else {
-            System.err.println("(" + threadId + ")" + "Failed to delete file: " + fileName);
+            logger.error("(" + threadId + ")" + "Failed to delete file: " + fileName);
         }
+		return;
     }
 
 	// Loading configuration file
