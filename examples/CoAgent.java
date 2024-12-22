@@ -28,6 +28,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.*;
 import java.net.*;
 
+// log4j
+import org.apache.log4j.Logger; // Log4j import
+
+
 // 구성 값을 저장할 클래스를 정의합니다.
 class Config {
     String logLevel;
@@ -151,6 +155,18 @@ public class CoAgent {
 			// 이곳에도 받은 데이터 분실에 대비한 save 루틴이 필요할 수도 있지만
 			// enQ 가 워낙 빠르기 때문에 실제로 불필요 함.
 
+
+			/*
+			// 서버로부터 메시지 길이 및 메시지 읽기
+			int messageLength = in.readInt();
+			if (messageLength > 0) {
+				byte[] receivedData = new byte[messageLength];
+				in.readFully(receivedData, 0, messageLength);
+				String receivedMessage = new String(receivedData);
+				System.out.println("Server response: " + receivedMessage);
+			}
+			*/
+
 			int write_rc = resultQueue.write( enQueueData );
 
 			if( write_rc < 0 ) {
@@ -218,8 +234,8 @@ public class CoAgent {
 
 		try (
 			Socket socket = new Socket(serverIp, serverPort);
-			PrintWriter out_socket = new PrintWriter(socket.getOutputStream(), true);
-			BufferedReader in_socket = new BufferedReader(new InputStreamReader(socket.getInputStream())) )  
+			DataOutputStream out_socket = new DataOutputStream(socket.getOutputStream());
+			DataInputStream in_socket = new DataInputStream(socket.getInputStream()) )  
 		{
 			// 비정상 종료시 미처리로 남아있던 파일을 처리한다.( 미리 커밋을 했을 경우, 메시지 누락 방지 )
 			// recovery 
@@ -326,8 +342,8 @@ public class CoAgent {
         }
     }
 
-    // my job
-    private static int  DoMessage(int threadId, int rc, long out_seq, long out_run_time, String jsonMessage, PrintWriter out_socket, BufferedReader in_socket, FileQueueJNI ackQueue ) {
+    // DeQ and send message to server.
+    private static int  DoMessage(int threadId, int rc, long out_seq, long out_run_time, String jsonMessage, DataOutputStream out_socket, DataInputStream in_socket, FileQueueJNI ackQueue ) {
 		boolean tf=JsonParserAndVerify ( threadId, jsonMessage );
 		if( tf == false ) {
 			return 0;
@@ -335,49 +351,64 @@ public class CoAgent {
 
 	    System.out.println("(" + threadId + ")" + "data read success:" + " rc: " + rc + " msg: " + jsonMessage + " seq: " + out_seq + " run_time(micro seconds): " + out_run_time);
 
-		out_socket.println(jsonMessage); // 서버에 메시지 전송
-		out_socket.println("\n"); // 서버에 메시지 전송
+
+		// 메시지를 바이트 배열로 변환 후 길이와 함께 전송
+		try {
+			byte[] data = jsonMessage.getBytes();
+			out_socket.writeInt( data.length ); // 길이 Prefix header 전송
+			out_socket.write( data ); // 서버에 메시지 전송
+		} catch( IOException e) {
+			e.printStackTrace();
+		}
 
 		System.out.println("(" + threadId + ")" + "data send success");
 
 		// We receive ACK from server.
 		try {
-			String serverResponse = in_socket.readLine();
-			System.out.println("Server response(ACK): " + serverResponse);
+			// 길이헤더 수신
+			int responseLength = in_socket.readInt();
+			if( responseLength > 0 ) {
+				// 수신 byte[] 버퍼 생성
+				byte[] receiveData = new byte[responseLength];
+			
+				in_socket.readFully( receiveData, 0, responseLength);
 
-			while(true) {
-				int write_rc = ackQueue.write( serverResponse );
+				String serverResponse = new String(receiveData);
+				System.out.println("("+threadId+")" + "Server response(ACK): " + serverResponse);
 
-				if( write_rc < 0 ) {
-					System.out.println("Write failed: " + ackQueue.path + "," + ackQueue.qname + "," + " rc: " + write_rc);
-					ackQueue.close();
-					return write_rc;
-				}
-				else if( write_rc == 0 ) { // queue is full
-					System.out.println("full: " + ackQueue.path + "," + ackQueue.qname + "," + " rc: " + write_rc);
-					try {
-						Thread.sleep(10); // Pause for 1 second (1000)
-					}
-					catch(InterruptedException ex) {
-							Thread.currentThread().interrupt();
-					}
-					continue;
-				}
-				else {
-					long writeOutSeq = ackQueue.get_out_seq();
-					long writeRunTime = ackQueue.get_out_run_time();
+				while(true) {
+					int write_rc = ackQueue.write( serverResponse );
 
-					System.out.println("("+threadId+")"+ "enQ(ACK) success: " + "seq=" + writeOutSeq + "," + "rc:" + write_rc);
-					try {
-						Thread.sleep(100); // Pause for 1 second (1000)
+					if( write_rc < 0 ) {
+						System.out.println("("+threadId+")"+ "Write failed: " + ackQueue.path + "," + ackQueue.qname + "," + " rc: " + write_rc);
+						ackQueue.close();
+						return write_rc;
 					}
-					catch(InterruptedException ex) {
-							Thread.currentThread().interrupt();
+					else if( write_rc == 0 ) { // queue is full
+						System.out.println("("+threadId+")" + "full: " + ackQueue.path + "," + ackQueue.qname + "," + " rc: " + write_rc);
+						try {
+							Thread.sleep(10); // Pause for 1 second (1000)
+						}
+						catch(InterruptedException ex) {
+								Thread.currentThread().interrupt();
+						}
+						continue;
 					}
-					break;
+					else {
+						long writeOutSeq = ackQueue.get_out_seq();
+						long writeRunTime = ackQueue.get_out_run_time();
+
+						System.out.println("("+threadId+")"+ "enQ(ACK) success: " + "seq=" + writeOutSeq + "," + "rc:" + write_rc);
+						try {
+							Thread.sleep(100); // Pause for 1 second (1000)
+						}
+						catch(InterruptedException ex) {
+								Thread.currentThread().interrupt();
+						}
+						break;
+					}
 				}
 			}
-
 		} catch( IOException e ) {
 			e.printStackTrace();
 		}
@@ -386,9 +417,19 @@ public class CoAgent {
     }
 
     // my job
-    private static int  RecoveryMessage(int threadId, String message, PrintWriter out_socket) {
+    private static int  RecoveryMessage(int threadId, String message, DataOutputStream out_socket) {
 	    System.out.println("(" + threadId + ")" + "recovery :"  + message);
-		out_socket.println(message); // 서버에 메시지 전송
+
+		try {
+			byte[] data = message.getBytes();
+			out_socket.writeInt(data.length); // 길이헤더 전송
+			out_socket.write(data); // 서버에 메시지 전송
+			System.out.println("("+threadId+")"+ "Recovery data sending success: " + data);
+		} catch( IOException e) {
+			e.printStackTrace();
+			return 0;
+		}
+		
 		return 1;
     }
 
