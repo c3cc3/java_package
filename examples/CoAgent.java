@@ -577,7 +577,7 @@ public class CoAgent {
 				// && jsonNode.hasNonNull("HEADER")
 				// && jsonNode.hasNonNull("FOOTER")
 				// && jsonNode.hasNonNull("COPYALLOWED")
-				// && jsonNode.hasNonNull("MESSAGE")
+				&& jsonNode.hasNonNull("MESSAGE")
 				// && jsonNode.hasNonNull("BOTTONS")
 			) {
                 // 필드들이 존재하므로 데이터를 읽습니다.
@@ -589,18 +589,18 @@ public class CoAgent {
                 String brandId = jsonNode.get("BRAND_ID").asText();
                 String brandKey = jsonNode.get("BRAND_KEY").asText();
                 String messageBaseId = jsonNode.get("MESSAGEBASE_ID").asText();
-				/*
-                String header = jsonNode.get("HEADER").asText();
-                String footer = jsonNode.get("FOOTER").asText();
-                String copyAllowed = jsonNode.get("COPYALLOWED").asText();
                 String message = jsonNode.get("MESSAGE").asText();
-				*/
+
+                // String header = jsonNode.get("HEADER").asText();
+                // String footer = jsonNode.get("FOOTER").asText();
+                // String copyAllowed = jsonNode.get("COPYALLOWED").asText();
+
                 // String bottons = jsonNode.get("BOTTONS").asText();
                 // int channel = jsonNode.get("CHANNEL").asInt();
                 // String city = jsonNode.get("city").asText();
 				// boolean isActive = jsonNode.get("isActive").asBoolean();
 
-            	System.out.println("-------------------------- OK ------------------------");
+            	System.out.println("-------------------------- JSON Check OK ------------------------");
             	System.out.println("\t-(" + threadId + ")" + "SEQ: " + seq);
             	System.out.println("\t-(" + threadId + ")" + "CHANNEL: " + channel);
             	System.out.println("\t-(" + threadId + ")" + "MSG_TYPE: " + msgType);
@@ -609,9 +609,10 @@ public class CoAgent {
             	System.out.println("\t-(" + threadId + ")" + "BRAND_ID: " + brandId);
             	System.out.println("\t-(" + threadId + ")" + "BRAND_KEY: " + brandKey);
             	System.out.println("\t-(" + threadId + ")" + "MESSAGEBASE_ID: " + messageBaseId);
+            	System.out.println("\t-(" + threadId + ")" + "MESSAGE: " + message);
 				return true;
             } else {
-            	System.out.println("--------------------------ERROR------------------------");
+            	System.out.println("--------------------------JSON Check ERROR------------------------");
             	logger.error("(" + threadId + ")" + "Invalid JSON: missing required fields");
 				return false;
             }

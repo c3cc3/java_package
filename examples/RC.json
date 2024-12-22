@@ -11,7 +11,7 @@
 "HEADER": "0",
 "FOOTER": "1",
 "COPYALLOWED": true,
-"MESSAGE": "{\"description\": \"aaaa\"}",
+"MESSAGE": "{\"description\": \"This is RCS-RS message.\"}",
 "ALIM_SAVE_YN":"N",
 "ALIM_IMP_YN":"N",
 "ALIM_SUBJECT":"",
