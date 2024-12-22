@@ -290,9 +290,11 @@ public class CoAgent {
 					// 
 					///////////////////////////////////////////////////////////// 
 
+/*
 					if( userWorkingTimeForSimulate > 0 ) {
 						Thread.sleep(userWorkingTimeForSimulate); // Pause for 1 second
 					}
+*/
 					if( your_job_result == 1) { // normal data
 						deleteFile(threadId); // 파일 삭제
 						queue.commitXA();
@@ -531,13 +533,13 @@ public class CoAgent {
 
             // JSON 검증: 필수 필드가 있는지 확인
             if (jsonNode.hasNonNull("SEQ") 
-				// && jsonNode.hasNonNull("CHANNEL")
-				// && jsonNode.hasNonNull("MSG_TYPE")
-				// && jsonNode.hasNonNull("RECEIVER")
-				// && jsonNode.hasNonNull("SENDER")
-				// && jsonNode.hasNonNull("BRAND_ID")
-				// && jsonNode.hasNonNull("BRAND_KEY")
-				// && jsonNode.hasNonNull("MESSAGEBASE_ID")
+				&& jsonNode.hasNonNull("CHANNEL")
+				&& jsonNode.hasNonNull("MSG_TYPE")
+				&& jsonNode.hasNonNull("RECEIVER")
+				&& jsonNode.hasNonNull("SENDER")
+				&& jsonNode.hasNonNull("BRAND_ID")
+				&& jsonNode.hasNonNull("BRAND_KEY")
+				&& jsonNode.hasNonNull("MESSAGEBASE_ID")
 				// && jsonNode.hasNonNull("HEADER")
 				// && jsonNode.hasNonNull("FOOTER")
 				// && jsonNode.hasNonNull("COPYALLOWED")
@@ -546,14 +548,14 @@ public class CoAgent {
 			) {
                 // 필드들이 존재하므로 데이터를 읽습니다.
                 String seq = jsonNode.get("SEQ").asText();
-				/*
                 String channel = jsonNode.get("CHANNEL").asText();
                 String msgType = jsonNode.get("MSG_TYPE").asText();
                 String receiver = jsonNode.get("RECEIVER").asText();
-                String sender = jsonNode.get("SENDEER").asText();
+                String sender = jsonNode.get("SENDER").asText();
                 String brandId = jsonNode.get("BRAND_ID").asText();
                 String brandKey = jsonNode.get("BRAND_KEY").asText();
-                String messageId = jsonNode.get("MESSAGEBASE_ID").asText();
+                String messageBaseId = jsonNode.get("MESSAGEBASE_ID").asText();
+				/*
                 String header = jsonNode.get("HEADER").asText();
                 String footer = jsonNode.get("FOOTER").asText();
                 String copyAllowed = jsonNode.get("COPYALLOWED").asText();
@@ -565,11 +567,18 @@ public class CoAgent {
 				// boolean isActive = jsonNode.get("isActive").asBoolean();
 
             	System.out.println("-------------------------- OK ------------------------");
-            	System.out.println("(" + threadId + ")" + "SEQ: " + seq);
+            	System.out.println("\t-(" + threadId + ")" + "SEQ: " + seq);
+            	System.out.println("\t-(" + threadId + ")" + "CHANNEL: " + channel);
+            	System.out.println("\t-(" + threadId + ")" + "MSG_TYPE: " + msgType);
+            	System.out.println("\t-(" + threadId + ")" + "RECEIVER: " + receiver);
+            	System.out.println("\t-(" + threadId + ")" + "SENDER: " + sender);
+            	System.out.println("\t-(" + threadId + ")" + "BRAND_ID: " + brandId);
+            	System.out.println("\t-(" + threadId + ")" + "BRAND_KEY: " + brandKey);
+            	System.out.println("\t-(" + threadId + ")" + "MESSAGEBASE_ID: " + messageBaseId);
 				return true;
             } else {
             	System.out.println("--------------------------ERROR------------------------");
-            	System.out.println("(" + threadId + ")" + "Invalid JSON: missing required fields");
+            	logger.error("(" + threadId + ")" + "Invalid JSON: missing required fields");
 				return false;
             }
         } catch (Exception e) {
