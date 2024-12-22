@@ -250,6 +250,7 @@ public class CoAgent {
 				}
 			} catch (IOException e) {
 				System.err.println("("+threadId+")"+ "backup recovery 오류: " + e.getMessage());
+				logger.error("("+threadId+")"+ "Connected to the echo server." + ", IP=" + serverIp + ", PORT=" + serverPort );
 			}
 
 			try {
@@ -259,17 +260,17 @@ public class CoAgent {
 
 					read_rc = queue.readXA(); // XA read 
 					if( read_rc < 0 ) {
-						System.out.println("("+threadId+")"+ "readXA failed: " + queue.path + "," + queue.qname + "," + " rc: " + read_rc);
+						logger.error("("+threadId+")"+ "readXA failed: " + queue.path + "," + queue.qname + "," + " rc: " + read_rc);
 						break;
 					}
 
 					if( read_rc == 0 ) {
 						System.out.println("("+threadId+")"+ "There is no data(empty) : " + queue.path + "," + queue.qname + "," + " rc: " + read_rc);
+						logger.debug("("+threadId+")"+ "There is no data(empty) : " + queue.path + "," + queue.qname + "," + " rc: " + read_rc);
 						Thread.sleep(1000); // Pause for 1 second
 						continue;
 					}
 
-					queue.commitXA();
 
 					String data = queue.get_out_msg();
 					long out_seq = queue.get_out_seq();
@@ -291,9 +292,12 @@ public class CoAgent {
 					}
 					if( your_job_result == 1) { // normal data
 						deleteFile(threadId); // 파일 삭제
+						queue.commitXA();
+						logger.debug("("+threadId+")"+ "normal data: commitXA() sucesss seq : " + out_seq);
 					}
 					else { // abnormal data
 						queue.cancelXA();
+						logger.debug("("+threadId+")"+ "abnormal data: cancelXA() sucesss seq : " + out_seq);
 						break;
 					}
 				}
