@@ -230,6 +230,7 @@ public class ClangSimulatorDualFunctionTcpServer {
                 e.printStackTrace();
             }
             System.out.println("receiveRequestServer connection closed.");
+			System.exit(0);
         }
     }
 
