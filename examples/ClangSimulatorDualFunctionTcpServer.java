@@ -16,6 +16,23 @@ import org.w3c.dom.Element;
 // for your standard keyboard input
 import java.util.Scanner;
 
+// json Object
+import org.json.JSONObject;
+
+
+// JSON library: jackson
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+// import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import java.util.HashMap;
+import java.util.Map; // mapper
+
+// Get current time // yyyymmddHHMMSS
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+
 // 구성 값을 저장할 클래스를 정의합니다.
 class Config {
     String logLevel;
@@ -43,8 +60,6 @@ class Config {
 public class ClangSimulatorDualFunctionTcpServer {
 
     public static void main(String[] args) {
-        int echoPort = 5001;
-        int messagePort = 5002;
 
 		System.out.println("args.length=" + args.length);
 		for(int i = 0; i< args.length; i++) {
@@ -115,10 +130,79 @@ public class ClangSimulatorDualFunctionTcpServer {
             BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             PrintWriter writer = new PrintWriter(clientSocket.getOutputStream(), true);
         ) {
+
             String receivedMessage;
             while ((receivedMessage = reader.readLine()) != null) {
                 System.out.println("Received (Echo): " + receivedMessage);
-                writer.println(receivedMessage);  // Echo back the received message
+
+				// enQueue 
+				try {
+					int write_rc = ackQueue.write( receivedMessage );
+
+					if( write_rc < 0 ) {
+						System.err.println("Write failed: " + ackQueue.path + "," + ackQueue.qname + "," + " rc: " + write_rc);
+						ackQueue.close();
+						return;
+					}
+					else if( write_rc == 0 ) { // queue is full
+						System.out.println("full: " + ackQueue.path + "," + ackQueue.qname + "," + " rc: " + write_rc);
+						try {
+							Thread.sleep(10); // Pause for 1 second (1000)
+						}
+						catch(InterruptedException ex) {
+							Thread.currentThread().interrupt();
+						}
+						continue;
+					}
+					else {
+						long out_seq = ackQueue.get_out_seq();
+						long out_run_time = ackQueue.get_out_run_time();
+
+						System.out.println("(echoClient)->receive thread:"+ "enQ success: " + "seq=" + out_seq + "," + "rc:" + write_rc);
+						try {
+							Thread.sleep(100); // Pause for 1 second (1000)
+						}
+						catch(InterruptedException ex) {
+								Thread.currentThread().interrupt();
+						}
+						continue;
+					}
+				} catch (Exception e) {
+					System.err.println("(echoClient)"+ "resultQueue.write() 오류: " + e.getMessage());
+				}
+
+				// parsing json message and get HISTORY_KEY
+				boolean healthCheckFlag = false;
+				String returnSequence = null;
+
+				boolean tf=JsonParserAndVerify (receivedMessage, healthCheckFlag, returnSequence );
+				if( tf == false && returnSequence != null ) {
+					System.err.println("(echoClient)" + "JdonParerAndVerify() interrupted.");
+					return;
+				}
+				if( healthCheckFlag == true) {
+					System.err.println("(echoClient)" + "Health checking message.");
+					return;
+				}
+
+				// Make a new ACK json message
+				JSONObject ackJson = new JSONObject();
+
+				ackJson.put("HISTORY_KEY", returnSequence);
+				ackJson.put("RESP_KIND", 30);
+				ackJson.put("STATUS_CODE", "1");
+				ackJson.put("RESULT_CODE", "0000");
+				ackJson.put("RCS_MESSAGE", "success");
+
+				String currentDateTime = getCurrentTime(); // 현재 시간을 가져오는 방법이 구현돼 있어야 함
+				ackJson.put("RCS_SND_DTM", currentDateTime);
+				ackJson.put("RCS_RCCP_DTM", currentDateTime);
+				ackJson.put("AGENT_CODE", "MY");
+
+				String jsonString = ackJson.toString();
+				// logger.debug("Generated JSON: " + jsonString);
+				
+                writer.println(jsonString);  
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -230,4 +314,91 @@ public class ClangSimulatorDualFunctionTcpServer {
 		System.out.println("\t- result PORT for Simulating : " + config.resultPort);
 		System.out.println("---------- < configuration end >--------------- ");
 	}
+	
+	// 현재 시간을 "yyyyMMddHHmmss" 형식으로 문자열로 반환
+    public static String getCurrentTime() {
+        // 현재 날짜 및 시간 얻기
+        LocalDateTime now = LocalDateTime.now();
+        
+        // 원하는 형식으로 포맷터 생성
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+        
+        // 포맷팅된 문자열 반환
+        return now.format(formatter);
+    }
+
+	private static boolean JsonParserAndVerify ( String jsonString, boolean hcFlag, String returnSequence ) {
+        // JSON 문자열 입력
+        // String jsonString = "{\"name\":\"John\", \"age\":30, \"city\":\"New York\"}";
+
+        // ObjectMapper 인스턴스를 생성합니다.
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        try {
+            // JSON 문자열을 JsonNode로 파싱합니다.
+            JsonNode jsonNode = objectMapper.readTree(jsonString);
+
+            // JSON 검증: 필수 필드가 있는지 확인
+            if (jsonNode.hasNonNull("SEQ") 
+				&& jsonNode.hasNonNull("CHANNEL")
+				&& jsonNode.hasNonNull("MSG_TYPE")
+				&& jsonNode.hasNonNull("RECEIVER")
+				&& jsonNode.hasNonNull("SENDER")
+				&& jsonNode.hasNonNull("BRAND_ID")
+				&& jsonNode.hasNonNull("BRAND_KEY")
+				&& jsonNode.hasNonNull("MESSAGEBASE_ID")
+				// && jsonNode.hasNonNull("HEADER")
+				// && jsonNode.hasNonNull("FOOTER")
+				// && jsonNode.hasNonNull("COPYALLOWED")
+				&& jsonNode.hasNonNull("MESSAGE")
+				// && jsonNode.hasNonNull("BOTTONS")
+			) {
+                // 필드들이 존재하므로 데이터를 읽습니다.
+                String seq = jsonNode.get("SEQ").asText();
+				returnSequence  = seq; // sequence 값을 인자로 돌려준다.
+
+                String channel = jsonNode.get("CHANNEL").asText();
+                String msgType = jsonNode.get("MSG_TYPE").asText();
+                String receiver = jsonNode.get("RECEIVER").asText();
+                String sender = jsonNode.get("SENDER").asText();
+                String brandId = jsonNode.get("BRAND_ID").asText();
+                String brandKey = jsonNode.get("BRAND_KEY").asText();
+                String messageBaseId = jsonNode.get("MESSAGEBASE_ID").asText();
+                String message = jsonNode.get("MESSAGE").asText();
+
+                // String header = jsonNode.get("HEADER").asText();
+                // String footer = jsonNode.get("FOOTER").asText();
+                // String copyAllowed = jsonNode.get("COPYALLOWED").asText();
+
+                // String bottons = jsonNode.get("BOTTONS").asText();
+                // int channel = jsonNode.get("CHANNEL").asInt();
+                // String city = jsonNode.get("city").asText();
+				// boolean isActive = jsonNode.get("isActive").asBoolean();
+
+            	System.out.println("-------------------------- JSON Check OK ------------------------");
+            	System.out.println("\t-(echoClient)" + "SEQ: " + seq);
+            	System.out.println("\t-(echoClient)" + "CHANNEL: " + channel);
+            	System.out.println("\t-(echoClient)" + "MSG_TYPE: " + msgType);
+            	System.out.println("\t-(echoClient)" + "RECEIVER: " + receiver);
+            	System.out.println("\t-(echoClient)" + "SENDER: " + sender);
+            	System.out.println("\t-(echoClient)" + "BRAND_ID: " + brandId);
+            	System.out.println("\t-(echoClient)" + "BRAND_KEY: " + brandKey);
+            	System.out.println("\t-(echoClient)" + "MESSAGEBASE_ID: " + messageBaseId);
+            	System.out.println("\t-(echoClient)" + "MESSAGE: " + message);
+
+				if (channel.equalsIgnoreCase("HC")) { // is health checking.
+					hcFlag = true;
+				}
+				return true;
+            } else {
+            	System.out.println("--------------------------JSON Check ERROR------------------------");
+            	System.err.println("(echoClient)" + "Invalid JSON: missing required fields");
+				return false;
+            }
+        } catch (Exception e) {
+            // JSON 파싱 중 예외가 발생했을 경우
+            System.err.println("Error verifying or parsing JSON: " + e.getMessage());
+			return false;
+        }
+    }
 }
