@@ -37,19 +37,19 @@ import java.time.format.DateTimeFormatter;
 class Config {
     String logLevel;
     String logFilePath;
-    String queuePath;
-    String queueName;
+    String interThreadComQueuePath;
+    String interThreadComQueueName;
     int userWorkingTimeForSimulate;
 	int		ackPort;
 	int		resultPort;
 
     // 생성자
-    public Config(String logLevel, String logFilePath, String queuePath, String queueName,
+    public Config(String logLevel, String logFilePath, String interThreadComQueuePath, String interThreadComQueueName,
                   int userWorkingTimeForSimulate, int ackPort, int resultPort) {
         this.logLevel = logLevel;
         this.logFilePath = logFilePath;
-        this.queuePath = queuePath;
-        this.queueName = queueName;
+        this.interThreadComQueuePath = interThreadComQueuePath;
+        this.interThreadComQueueName = interThreadComQueueName;
         this.userWorkingTimeForSimulate = userWorkingTimeForSimulate;
         this.ackPort = ackPort;
         this.resultPort = resultPort;
@@ -105,19 +105,19 @@ public class ClangSimulatorDualFunctionTcpServer {
 		// File Queue Open
 		int rc;
 		int queueIndex = 0;
-		FileQueueJNI ackQueue = new FileQueueJNI( queueIndex, "/tmp/ackServer.log", 4, config.queuePath, config.queueName);
-		if(  (rc = ackQueue.open()) < 0 ) {
-			System.out.println("open failed: " + "qPath="+ config.queuePath + ", qName=" + config.queueName + ", rc=" + rc);
+		FileQueueJNI interThreadComQueue = new FileQueueJNI( queueIndex, "/tmp/ackServer.log", 4, config.interThreadComQueuePath, config.interThreadComQueueName);
+		if(  (rc = interThreadComQueue.open()) < 0 ) {
+			System.out.println("open failed: " + "qPath="+ config.interThreadComQueuePath + ", qName=" + config.interThreadComQueueName + ", rc=" + rc);
 			return;
 		}
 
         try (ServerSocket serverSocket = new ServerSocket(config.ackPort)) {
             System.out.println("Echo Server listening on port " + config.ackPort);
-            System.out.println("Queue info:" + config.queuePath + ", " +config.queueName);
+            System.out.println("interThreadComQueue info:" + config.interThreadComQueuePath + ", " +config.interThreadComQueueName);
 
             while (true) {
                 Socket clientSocket = serverSocket.accept();
-                new Thread(() -> handleEchoClient(clientSocket, ackQueue)).start();
+                new Thread(() -> handleEchoClient(clientSocket, interThreadComQueue)).start();
             }
         } catch (IOException e) {
             System.err.println("Could not listen on port " + config.ackPort);
@@ -125,7 +125,7 @@ public class ClangSimulatorDualFunctionTcpServer {
         }
     }
 
-    public static void handleEchoClient(Socket clientSocket, FileQueueJNI ackQueue) {
+    public static void handleEchoClient(Socket clientSocket, FileQueueJNI interThreadComQueue) {
         try (
             BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             PrintWriter writer = new PrintWriter(clientSocket.getOutputStream(), true);
@@ -137,15 +137,15 @@ public class ClangSimulatorDualFunctionTcpServer {
 
 				// enQueue 
 				try {
-					int write_rc = ackQueue.write( receivedMessage );
+					int write_rc = interThreadComQueue.write( receivedMessage );
 
 					if( write_rc < 0 ) {
-						System.err.println("Write failed: " + ackQueue.path + "," + ackQueue.qname + "," + " rc: " + write_rc);
-						ackQueue.close();
+						System.err.println("Write failed: " + interThreadComQueue.path + "," + interThreadComQueue.qname + "," + " rc: " + write_rc);
+						interThreadComQueue.close();
 						return;
 					}
 					else if( write_rc == 0 ) { // queue is full
-						System.out.println("full: " + ackQueue.path + "," + ackQueue.qname + "," + " rc: " + write_rc);
+						System.out.println("full: " + interThreadComQueue.path + "," + interThreadComQueue.qname + "," + " rc: " + write_rc);
 						try {
 							Thread.sleep(10); // Pause for 1 second (1000)
 						}
@@ -155,8 +155,8 @@ public class ClangSimulatorDualFunctionTcpServer {
 						continue;
 					}
 					else {
-						long out_seq = ackQueue.get_out_seq();
-						long out_run_time = ackQueue.get_out_run_time();
+						long out_seq = interThreadComQueue.get_out_seq();
+						long out_run_time = interThreadComQueue.get_out_run_time();
 
 						System.out.println("(echoClient)->receive thread:"+ "enQ success: " + "seq=" + out_seq + "," + "rc:" + write_rc);
 						try {
@@ -221,18 +221,18 @@ public class ClangSimulatorDualFunctionTcpServer {
 		// File Queue Open
 		int rc;
 		int queueIndex = 1;
-		FileQueueJNI resultQueue = new FileQueueJNI( queueIndex, "/tmp/resultServer.log", 4, config.queuePath, config.queueName);
-		if(  (rc = resultQueue.open()) < 0 ) {
-			System.out.println("open failed: " + "qPath="+ config.queuePath + ", qName=" + config.queueName + ", rc=" + rc);
+		FileQueueJNI interThreadComQueue = new FileQueueJNI( queueIndex, "/tmp/resultServer.log", 4, config.interThreadComQueuePath, config.interThreadComQueueName);
+		if(  (rc = interThreadComQueue.open()) < 0 ) {
+			System.out.println("open failed: " + "qPath="+ config.interThreadComQueuePath + ", qName=" + config.interThreadComQueueName + ", rc=" + rc);
 			return;
 		}
 
         try (ServerSocket serverSocket = new ServerSocket(config.resultPort)) {
             System.out.println("Message Sender Server listening on port " + config.resultPort);
-            System.out.println("Queue info:" + config.queuePath + ", " +config.queueName);
+            System.out.println("interThreadComQueue info:" + config.interThreadComQueuePath + ", " +config.interThreadComQueueName);
             while (true) {
                 Socket clientSocket = serverSocket.accept();
-                new Thread(() -> handleMessageClient(clientSocket, resultQueue)).start();
+                new Thread(() -> handleMessageClient(clientSocket, interThreadComQueue)).start();
             }
         } catch (IOException e) {
             System.err.println("Could not listen on port " + config.resultPort);
@@ -240,7 +240,7 @@ public class ClangSimulatorDualFunctionTcpServer {
         }
     }
 
-    public static void handleMessageClient(Socket clientSocket, FileQueueJNI resultQueue) {
+    public static void handleMessageClient(Socket clientSocket, FileQueueJNI interThreadComQueue) {
 		long threadId = Thread.currentThread().getId();
         try (
             BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
@@ -253,26 +253,26 @@ public class ClangSimulatorDualFunctionTcpServer {
 				while (true) {
 					int read_rc = 0;
 
-					read_rc = resultQueue.readXA(); // XA read 
+					read_rc = interThreadComQueue.readXA(); // XA read 
 					if( read_rc < 0 ) {
-						System.err.println("("+threadId+")"+ "readXA failed: " + resultQueue.path + "," + resultQueue.qname + "," + " rc: " + read_rc);
+						System.err.println("("+threadId+")"+ "readXA failed: " + interThreadComQueue.path + "," + interThreadComQueue.qname + "," + " rc: " + read_rc);
 						break;
 					}
 
 					if( read_rc == 0 ) {
-						System.out.println("("+threadId+")"+ "There is no data(empty) : " + resultQueue.path + "," + resultQueue.qname + "," + " rc: " + read_rc);
+						System.out.println("("+threadId+")"+ "There is no data(empty) : " + interThreadComQueue.path + "," + interThreadComQueue.qname + "," + " rc: " + read_rc);
 						Thread.sleep(1000); // Pause for 1 second
 						continue;
 					}
 
-					String data = resultQueue.get_out_msg();
-					long out_seq = resultQueue.get_out_seq();
-					String out_unlink_filename = resultQueue.get_out_unlink_filename();
-					long out_run_time = resultQueue.get_out_run_time();
+					String data = interThreadComQueue.get_out_msg();
+					long out_seq = interThreadComQueue.get_out_seq();
+					String out_unlink_filename = interThreadComQueue.get_out_unlink_filename();
+					long out_run_time = interThreadComQueue.get_out_run_time();
 
 					writeMessageToFile(threadId, data); // 파일에 메시지 쓰기
 					System.out.println("("+threadId+")"+ "backup file writing success");
-					resultQueue.commitXA();
+					interThreadComQueue.commitXA();
 					System.out.println("("+threadId+")"+ "normal data: commitXA() sucesss seq : " + out_seq);
 
 					// Make a json object with queue data.
@@ -299,7 +299,7 @@ public class ClangSimulatorDualFunctionTcpServer {
 						System.out.println("("+threadId+")"+ "deleteFile() sucesss seq : " + out_seq);
 					}
 					else { // abnormal data
-						resultQueue.cancelXA();
+						interThreadComQueue.cancelXA();
 						System.out.println("("+threadId+")"+ "abnormal data: cancelXA() sucesss seq : " + out_seq);
 						break;
 					}
@@ -309,7 +309,7 @@ public class ClangSimulatorDualFunctionTcpServer {
 				System.err.println("Thread " + threadId + " interrupted.");
 				
 			} finally {
-				resultQueue.close();
+				interThreadComQueue.close();
 			}
 
 
@@ -340,8 +340,8 @@ public class ClangSimulatorDualFunctionTcpServer {
             // 각 설정 값을 읽어옵니다.
             String logLevel = doc.getElementsByTagName("logLevel").item(0).getTextContent();
             String logFilePath = doc.getElementsByTagName("logFilePath").item(0).getTextContent();
-            String queuePath = doc.getElementsByTagName("queuePath").item(0).getTextContent();
-            String queueName = doc.getElementsByTagName("queueName").item(0).getTextContent();
+            String interThreadComQueuePath = doc.getElementsByTagName("interThreadComQueuePath").item(0).getTextContent();
+            String interThreadComQueueName = doc.getElementsByTagName("interThreadComQueueName").item(0).getTextContent();
 
             String userWorkingTime_str = doc.getElementsByTagName("userWorkingTimeForSimulate").item(0).getTextContent();
 			int userWorkingTimeForSimulate = Integer.parseInt(userWorkingTime_str); 
@@ -353,7 +353,7 @@ public class ClangSimulatorDualFunctionTcpServer {
 
 
             // Config 객체를 생성합니다.
-            config = new Config(logLevel, logFilePath, queuePath, queueName, userWorkingTimeForSimulate, ackPort, resultPort );
+            config = new Config(logLevel, logFilePath, interThreadComQueuePath, interThreadComQueueName, userWorkingTimeForSimulate, ackPort, resultPort );
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -366,8 +366,8 @@ public class ClangSimulatorDualFunctionTcpServer {
 		System.out.println("---------- < configuration begin >--------------- ");
 		System.out.println("\t- Log Level: " + config.logLevel);
 		System.out.println("\t- Log File Path: " + config.logFilePath);
-		System.out.println("\t- queue Path: " + config.queuePath);
-		System.out.println("\t- queue Name: " + config.queueName);
+		System.out.println("\t- interThreadComQueue Path: " + config.interThreadComQueuePath);
+		System.out.println("\t- interThreadComQueue Name: " + config.interThreadComQueueName);
 		System.out.println("\t- User Working Time for Simulating : " + config.userWorkingTimeForSimulate);
 		System.out.println("\t- ack PORT for Simulating : " + config.ackPort);
 		System.out.println("\t- result PORT for Simulating : " + config.resultPort);
