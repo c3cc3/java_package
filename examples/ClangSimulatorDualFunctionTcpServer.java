@@ -131,95 +131,98 @@ public class ClangSimulatorDualFunctionTcpServer {
             DataInputStream reader = new DataInputStream(clientSocket.getInputStream());
             DataOutputStream writer = new DataOutputStream(clientSocket.getOutputStream());
         ) {
-			// 길이헤더 수신
-            int responseLength = reader.readInt();
-            if( responseLength <= 0 ) {
-				System.err.println("reader.readInt() error.");
-				return;
-			}
-			// 수신 byte[] 버퍼 생성
-            byte[] receiveData = new byte[responseLength];
-            reader.readFully( receiveData, 0, responseLength);
-			String requestData = new String(receiveData);
-            System.out.println("Received (request from client): " + requestData);
-
-			// enQueue 
-			try {
-				while(true) {
-					int write_rc = interThreadComQueue.write( requestData );
-
-					if( write_rc < 0 ) {
-						System.err.println("Write failed: " + interThreadComQueue.path + "," + interThreadComQueue.qname + "," + " rc: " + write_rc);
-						interThreadComQueue.close();
-						return;
-					}
-					else if( write_rc == 0 ) { // queue is full
-						System.out.println("full: " + interThreadComQueue.path + "," + interThreadComQueue.qname + "," + " rc: " + write_rc);
-						try {
-							Thread.sleep(1000); // Pause for 1 second (1000)
-						}
-						catch(InterruptedException ex) {
-							Thread.currentThread().interrupt();
-						}
-						continue;
-					}
-					else {
-						long out_seq = interThreadComQueue.get_out_seq();
-						long out_run_time = interThreadComQueue.get_out_run_time();
-
-						System.out.println("(echoClient)->receive thread:"+ "enQ success: " + "seq=" + out_seq + "," + "rc:" + write_rc);
-						try {
-							Thread.sleep(100); // Pause for 1 second (1000)
-						}
-						catch(InterruptedException ex) {
-								Thread.currentThread().interrupt();
-						}
-						continue;
-					}
+			while(true) { // 데이터 수신을 무한 반복.
+				// 길이헤더 수신
+				int responseLength = reader.readInt();
+				if( responseLength <= 0 ) {
+					System.err.println("reader.readInt() error.");
+					return;
 				}
-			} catch (Exception e) {
-				System.err.println("(echoClient)"+ "resultQueue.write() 오류: " + e.getMessage());
-			}
+				// 수신 byte[] 버퍼 생성
+				byte[] receiveData = new byte[responseLength];
+				reader.readFully( receiveData, 0, responseLength);
+				String requestData = new String(receiveData);
+				System.out.println("Received (request from client): " + requestData);
 
-			// parsing json message and get HISTORY_KEY
-			boolean healthCheckFlag = false;
-			String returnSequence = null;
+				// enQueue 
+				try {
+					while(true) {
+						int write_rc = interThreadComQueue.write( requestData );
 
-			boolean tf=JsonParserAndVerify (requestData, healthCheckFlag, returnSequence );
-			if( tf == false && returnSequence != null ) {
-				System.err.println("(echoClient)" + "JdonParerAndVerify() interrupted.");
-				return;
-			}
-			if( healthCheckFlag == true) {
-				System.err.println("(echoClient)" + "Health checking message.");
-				return;
-			}
+						if( write_rc < 0 ) {
+							System.err.println("Write failed: " + interThreadComQueue.path + "," + interThreadComQueue.qname + "," + " rc: " + write_rc);
+							interThreadComQueue.close();
+							return;
+						}
+						else if( write_rc == 0 ) { // queue is full
+							System.out.println("full: " + interThreadComQueue.path + "," + interThreadComQueue.qname + "," + " rc: " + write_rc);
+							try {
+								Thread.sleep(1000); // Pause for 1 second (1000)
+							}
+							catch(InterruptedException ex) {
+								Thread.currentThread().interrupt();
+							}
+							continue;
+						}
+						else {
+							long out_seq = interThreadComQueue.get_out_seq();
+							long out_run_time = interThreadComQueue.get_out_run_time();
 
-			// Make a new ACK json message
-			JSONObject ackJson = new JSONObject();
+							System.out.println("(echoClient)->receive thread:"+ "enQ success: " + "seq=" + out_seq + "," + "rc:" + write_rc);
+							try {
+								Thread.sleep(100); // Pause for 1 second (1000)
+							}
+							catch(InterruptedException ex) {
+									Thread.currentThread().interrupt();
+							}
+							break;
+						}
+					}
+				} catch (Exception e) {
+					System.err.println("(echoClient)"+ "resultQueue.write() 오류: " + e.getMessage());
+				}
 
-			ackJson.put("HISTORY_KEY", returnSequence);
-			ackJson.put("RESP_KIND", 30);
-			ackJson.put("STATUS_CODE", "1");
-			ackJson.put("RESULT_CODE", "0000");
-			ackJson.put("RCS_MESSAGE", "success");
+				// parsing json message and get HISTORY_KEY
+				boolean healthCheckFlag = false;
+				String returnSequence = null;
 
-			String currentDateTime = getCurrentTime(); // 현재 시간을 가져오는 방법이 구현돼 있어야 함
-			ackJson.put("RCS_SND_DTM", currentDateTime);
-			ackJson.put("RCS_RCCP_DTM", currentDateTime);
-			ackJson.put("AGENT_CODE", "MY");
+				boolean tf=JsonParserAndVerify (requestData, healthCheckFlag, returnSequence );
+				if( tf == false && returnSequence != null ) {
+					System.err.println("(echoClient)" + "JdonParerAndVerify() interrupted.");
+					return;
+				}
+				if( healthCheckFlag == true) {
+					System.err.println("(echoClient)" + "Health checking message.");
+					return;
+				}
 
-			String jsonString = ackJson.toString();
-			// logger.debug("Generated JSON: " + jsonString);
-			
-			// 메시지를 바이트 배열로 변환 후 길이와 함께 전송
-			try {
-				byte[] data = jsonString.getBytes();
-				writer.writeInt( data.length ); // 길이 Prefix header 전송
-				writer.write( data ); // 서버에 메시지 전송
-			} catch( IOException e) {
-				System.err.println("(receiveRequestServer)" + "writer.write:" + e.getMessage());
-				e.printStackTrace();
+				// Make a new ACK json message
+				JSONObject ackJson = new JSONObject();
+
+				ackJson.put("HISTORY_KEY", returnSequence);
+				ackJson.put("RESP_KIND", 30);
+				ackJson.put("STATUS_CODE", "1");
+				ackJson.put("RESULT_CODE", "0000");
+				ackJson.put("RCS_MESSAGE", "success");
+
+				String currentDateTime = getCurrentTime(); // 현재 시간을 가져오는 방법이 구현돼 있어야 함
+				ackJson.put("RCS_SND_DTM", currentDateTime);
+				ackJson.put("RCS_RCCP_DTM", currentDateTime);
+				ackJson.put("AGENT_CODE", "MY");
+
+				String jsonString = ackJson.toString();
+				// logger.debug("Generated JSON: " + jsonString);
+				
+				// 메시지를 바이트 배열로 변환 후 길이와 함께 전송
+				try {
+					byte[] data = jsonString.getBytes();
+					writer.writeInt( data.length ); // 길이 Prefix header 전송
+					writer.write( data ); // 서버에 메시지 전송
+					System.out.println("(receiveRequestServer):" + "ACK OK.");
+				} catch( IOException e) {
+					System.err.println("(receiveRequestServer)" + "writer.write:" + e.getMessage());
+					e.printStackTrace();
+				}
 			}
         } catch (IOException e) {
             e.printStackTrace();
@@ -266,6 +269,7 @@ public class ClangSimulatorDualFunctionTcpServer {
         ) {
 			// deQueue(while)
 			try {
+				System.out.println("Message sender server : DeQ start.");
 				// 무한반복
 				while (true) {
 					int read_rc = 0;
@@ -293,7 +297,6 @@ public class ClangSimulatorDualFunctionTcpServer {
 					System.out.println("("+threadId+")"+ "normal data: commitXA() sucesss seq : " + out_seq);
 
 					// Make a json object with queue data.
-
 
 
 
