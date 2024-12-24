@@ -2,6 +2,9 @@
 import java.io.*;
 import java.net.*;
 
+// FileQueue 
+import com.clang.fq.*;
+
 // XML configuration
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
@@ -10,31 +13,33 @@ import org.w3c.dom.NodeList;
 import org.w3c.dom.Node;
 import org.w3c.dom.Element;
 
-// for your input
+// for your standard keyboard input
 import java.util.Scanner;
 
 // 구성 값을 저장할 클래스를 정의합니다.
 class Config {
     String logLevel;
     String logFilePath;
-    String QueuePath;
-    String QueueName;
+    String queuePath;
+    String queueName;
     int userWorkingTimeForSimulate;
 	int		ackPort;
 	int		resultPort;
 
     // 생성자
-    public Config(String logLevel, String logFilePath, String QueuePath, String QueueName,
+    public Config(String logLevel, String logFilePath, String queuePath, String queueName,
                   int userWorkingTimeForSimulate, int ackPort, int resultPort) {
         this.logLevel = logLevel;
         this.logFilePath = logFilePath;
-        this.QueuePath = QueuePath;
-        this.QueueName = QueueName;
+        this.queuePath = queuePath;
+        this.queueName = queueName;
         this.userWorkingTimeForSimulate = userWorkingTimeForSimulate;
         this.ackPort = ackPort;
         this.resultPort = resultPort;
     }
 }
+
+// 통신사 Simulator TCP Server
 public class ClangSimulatorDualFunctionTcpServer {
 
     public static void main(String[] args) {
@@ -73,28 +78,39 @@ public class ClangSimulatorDualFunctionTcpServer {
         }
 
 
-        Thread echoServerThread = new Thread(() -> startEchoServer(echoPort));
-        Thread messageServerThread = new Thread(() -> startMessageSenderServer(messagePort));
+        Thread echoServerThread = new Thread(() -> startEchoServer(config));
+        Thread messageServerThread = new Thread(() -> startMessageSenderServer(config));
 
         echoServerThread.start();
         messageServerThread.start();
     }
 
     // 에코 기능을 수행하는 서버
-    public static void startEchoServer(int port) {
-        try (ServerSocket serverSocket = new ServerSocket(port)) {
-            System.out.println("Echo Server listening on port " + port);
+    public static void startEchoServer(Config config) {
+		// File Queue Open
+		int rc;
+		int queueIndex = 0;
+		FileQueueJNI ackQueue = new FileQueueJNI( queueIndex, "/tmp/ackServer.log", 4, config.queuePath, config.queueName);
+		if(  (rc = ackQueue.open()) < 0 ) {
+			System.out.println("open failed: " + "qPath="+ config.queuePath + ", qName=" + config.queueName + ", rc=" + rc);
+			return;
+		}
+
+        try (ServerSocket serverSocket = new ServerSocket(config.ackPort)) {
+            System.out.println("Echo Server listening on port " + config.ackPort);
+            System.out.println("Queue info:" + config.queuePath + ", " +config.queueName);
+
             while (true) {
                 Socket clientSocket = serverSocket.accept();
-                new Thread(() -> handleEchoClient(clientSocket)).start();
+                new Thread(() -> handleEchoClient(clientSocket, ackQueue)).start();
             }
         } catch (IOException e) {
-            System.err.println("Could not listen on port " + port);
+            System.err.println("Could not listen on port " + config.ackPort);
             e.printStackTrace();
         }
     }
 
-    public static void handleEchoClient(Socket clientSocket) {
+    public static void handleEchoClient(Socket clientSocket, FileQueueJNI ackQueue) {
         try (
             BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             PrintWriter writer = new PrintWriter(clientSocket.getOutputStream(), true);
@@ -117,15 +133,25 @@ public class ClangSimulatorDualFunctionTcpServer {
     }
 
     // 메시지를 먼저 보내고 응답을 받는 서버
-    public static void startMessageSenderServer(int port) {
-        try (ServerSocket serverSocket = new ServerSocket(port)) {
-            System.out.println("Message Sender Server listening on port " + port);
+    public static void startMessageSenderServer(Config config) {
+		// File Queue Open
+		int rc;
+		int queueIndex = 1;
+		FileQueueJNI resultQueue = new FileQueueJNI( queueIndex, "/tmp/resultServer.log", 4, config.queuePath, config.queueName);
+		if(  (rc = resultQueue.open()) < 0 ) {
+			System.out.println("open failed: " + "qPath="+ config.queuePath + ", qName=" + config.queueName + ", rc=" + rc);
+			return;
+		}
+
+        try (ServerSocket serverSocket = new ServerSocket(config.resultPort)) {
+            System.out.println("Message Sender Server listening on port " + config.resultPort);
+            System.out.println("Queue info:" + config.queuePath + ", " +config.queueName);
             while (true) {
                 Socket clientSocket = serverSocket.accept();
                 new Thread(() -> handleMessageClient(clientSocket)).start();
             }
         } catch (IOException e) {
-            System.err.println("Could not listen on port " + port);
+            System.err.println("Could not listen on port " + config.resultPort);
             e.printStackTrace();
         }
     }
@@ -171,8 +197,8 @@ public class ClangSimulatorDualFunctionTcpServer {
             // 각 설정 값을 읽어옵니다.
             String logLevel = doc.getElementsByTagName("logLevel").item(0).getTextContent();
             String logFilePath = doc.getElementsByTagName("logFilePath").item(0).getTextContent();
-            String QueuePath = doc.getElementsByTagName("QueuePath").item(0).getTextContent();
-            String QueueName = doc.getElementsByTagName("QueueName").item(0).getTextContent();
+            String queuePath = doc.getElementsByTagName("queuePath").item(0).getTextContent();
+            String queueName = doc.getElementsByTagName("queueName").item(0).getTextContent();
 
             String userWorkingTime_str = doc.getElementsByTagName("userWorkingTimeForSimulate").item(0).getTextContent();
 			int userWorkingTimeForSimulate = Integer.parseInt(userWorkingTime_str); 
@@ -184,7 +210,7 @@ public class ClangSimulatorDualFunctionTcpServer {
 
 
             // Config 객체를 생성합니다.
-            config = new Config(logLevel, logFilePath, QueuePath, QueueName, userWorkingTimeForSimulate, ackPort, resultPort );
+            config = new Config(logLevel, logFilePath, queuePath, queueName, userWorkingTimeForSimulate, ackPort, resultPort );
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -197,8 +223,8 @@ public class ClangSimulatorDualFunctionTcpServer {
 		System.out.println("---------- < configuration begin >--------------- ");
 		System.out.println("\t- Log Level: " + config.logLevel);
 		System.out.println("\t- Log File Path: " + config.logFilePath);
-		System.out.println("\t- Queue Path: " + config.QueuePath);
-		System.out.println("\t- Queue Name: " + config.QueueName);
+		System.out.println("\t- queue Path: " + config.queuePath);
+		System.out.println("\t- queue Name: " + config.queueName);
 		System.out.println("\t- User Working Time for Simulating : " + config.userWorkingTimeForSimulate);
 		System.out.println("\t- ack PORT for Simulating : " + config.ackPort);
 		System.out.println("\t- result PORT for Simulating : " + config.resultPort);
