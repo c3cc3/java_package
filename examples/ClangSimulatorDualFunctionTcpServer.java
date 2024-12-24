@@ -232,7 +232,7 @@ public class ClangSimulatorDualFunctionTcpServer {
             System.out.println("Queue info:" + config.queuePath + ", " +config.queueName);
             while (true) {
                 Socket clientSocket = serverSocket.accept();
-                new Thread(() -> handleMessageClient(clientSocket)).start();
+                new Thread(() -> handleMessageClient(clientSocket, resultQueue)).start();
             }
         } catch (IOException e) {
             System.err.println("Could not listen on port " + config.resultPort);
@@ -240,11 +240,19 @@ public class ClangSimulatorDualFunctionTcpServer {
         }
     }
 
-    public static void handleMessageClient(Socket clientSocket) {
+    public static void handleMessageClient(Socket clientSocket, FileQueueJNI resultQueue) {
         try (
             BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             PrintWriter writer = new PrintWriter(clientSocket.getOutputStream(), true);
         ) {
+
+			// deQueue(while)
+
+			// Make a json result message.
+
+			// send resultMessage to client.
+
+
             // 먼저 메시지를 보내고 클라이언트의 응답을 기다립니다.
             String initialMessage = "Hello from server!";
             System.out.println("Sending: " + initialMessage);
@@ -254,6 +262,8 @@ public class ClangSimulatorDualFunctionTcpServer {
             if ((responseMessage = reader.readLine()) != null) {
                 System.out.println("Received in response: " + responseMessage);
             }
+			// OK 가 들어오면 filequeue commit 을 수행한다.
+
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
