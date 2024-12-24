@@ -42,7 +42,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 // 구성 값을 저장할 클래스를 정의합니다.
-class Config {
+class AgentConfig {
     String logLevel;
     String logFilePath;
     String resultQueuePath;
@@ -51,11 +51,13 @@ class Config {
     String deQueueName;
     int userWorkingTimeForSimulate;
     int senderThreads;
-	String	serverIp;
-	int		serverPort;
+	String	ackServerIp;
+	int		ackServerPort;
+	String	resultServerIp;
+	int		resultServerPort;
 
     // 생성자
-    public Config(String logLevel, String logFilePath, String resultQueuePath, String resultQueueName, String deQueuePath, String deQueueName, int userWorkingTimeForSimulate, int senderThreads, String serverIp, int serverPort) {
+    public AgentConfig(String logLevel, String logFilePath, String resultQueuePath, String resultQueueName, String deQueuePath, String deQueueName, int userWorkingTimeForSimulate, int senderThreads, String ackServerIp, int ackServerPort, String resultServerIp, int resultServerPort) {
         this.logLevel = logLevel;
         this.logFilePath = logFilePath;
         this.resultQueuePath = resultQueuePath;
@@ -64,8 +66,10 @@ class Config {
         this.deQueueName = deQueueName;
         this.userWorkingTimeForSimulate = userWorkingTimeForSimulate;
         this.senderThreads = senderThreads;
-        this.serverIp = serverIp;
-        this.serverPort = serverPort;
+        this.ackServerIp = ackServerIp;
+        this.ackServerPort = ackServerPort;
+        this.resultServerIp = resultServerIp;
+        this.resultServerPort = resultServerPort;
     }
 }
 
@@ -101,7 +105,7 @@ public class CoAgent {
 
 
 		// 입력받은 경로로 구성 파일을 읽습니다.
-        Config config = readConfigFromFile(args[0]);
+        AgentConfig config = readConfigFromFile(args[0]);
 
 		// 모든 구성 값을 출력합니다.
         if (config != null) {
@@ -128,7 +132,7 @@ public class CoAgent {
 		final int receiveThreadId = config.senderThreads+1;
 
 		String resultQueueName = "GW_ONL_HIS";
-		resultExecutor.execute(() -> processResultReceiver(receiveThreadId, config.resultQueuePath, config.resultQueueName));
+		resultExecutor.execute(() -> processResultReceiver(receiveThreadId, config.resultQueuePath, config.resultQueueName, config.resultServerIp, config.resultServerPort));
 
 
 		// ExecutorService를 사용하여 스레드 생성
@@ -137,7 +141,7 @@ public class CoAgent {
 		// 10개의 발송 스레드 생성
 		for (int i = 0; i < config.senderThreads; i++) {
 			final int threadId = i;
-			executor.execute(() -> processMessages(config.serverIp, config.serverPort, threadId, config.deQueuePath, config.deQueueName, config.resultQueuePath, config.resultQueueName, config.userWorkingTimeForSimulate));
+			executor.execute(() -> processMessages(config.ackServerIp, config.ackServerPort, threadId, config.deQueuePath, config.deQueueName, config.resultQueuePath, config.resultQueueName, config.userWorkingTimeForSimulate));
 		}
 
 		executor.shutdown();
@@ -146,7 +150,7 @@ public class CoAgent {
 	}
 
 	// 결과 수집 스래드
-	private static void processResultReceiver(int threadId, String qPath, String qName)  {
+	private static void processResultReceiver(int threadId, String qPath, String qName, String resultServerIp, int resultServerPort)  {
 		int rc;
 
 		FileQueueJNI resultQueue = new FileQueueJNI( threadId, "/tmp/result_jni.log", 4, qPath, qName);
@@ -155,78 +159,89 @@ public class CoAgent {
 			return;
 		}
 
-		while(true) {
-			// 실제로는 이곳에 통신사로 부터 받는 소켓 수신 코드가 들어가야 함.
-			// enQueueData = receiveResult(socket);
-			String enQueueData = null;
-			// 이곳에도 받은 데이터 분실에 대비한 save 루틴이 필요할 수도 있지만
-			// enQ 가 워낙 빠르기 때문에 실제로 불필요 함.
+		try (
+			Socket socket = new Socket(resultServerIp, resultServerPort);
+			DataOutputStream out_socket = new DataOutputStream(socket.getOutputStream());
+			DataInputStream in_socket = new DataInputStream(socket.getInputStream()) )  
+		{
+			logger.info("("+threadId+")"+ "Connected to the echo server." + ", IP=" + resultServerIp + ", PORT=" + resultServerPort );
+
+			while(true) {
+				// 실제로는 이곳에 통신사로 부터 받는 소켓 수신 코드가 들어가야 함.
+				// enQueueData = receiveResult(socket);
+				String enQueueData = null;
+				// 이곳에도 받은 데이터 분실에 대비한 save 루틴이 필요할 수도 있지만
+				// enQ 가 워낙 빠르기 때문에 실제로 불필요 함.
 
 
-			/*
-			// 서버로부터 메시지 길이 및 메시지 읽기
-			int messageLength = in.readInt();
-			if (messageLength > 0) {
-				byte[] receivedData = new byte[messageLength];
-				in.readFully(receivedData, 0, messageLength);
-				String receivedMessage = new String(receivedData);
-				System.out.println("Server response: " + receivedMessage);
-			}
-			*/
-
-			// 새로운 JSON 생성
-            JSONObject resultJson = new JSONObject();
-
-
-			resultJson.put("HISTORY_KEY", "RANDOM_KEY_0000000");
-			resultJson.put("RESP_KIND", 30);
-			resultJson.put("STATUS_CODE", "1");
-			resultJson.put("RESULT_CODE", "0000");
-			resultJson.put("RCS_MESSAGE", "success");
-
-			String currentDateTime = getCurrentTime(); // 현재 시간을 가져오는 방법이 구현돼 있어야 함
-			resultJson.put("RCS_SND_DTM", currentDateTime);
-			resultJson.put("RCS_RCCP_DTM", currentDateTime);
-			resultJson.put("AGENT_CODE", "MY");
-
-			String jsonString = resultJson.toString();
-			logger.debug("Generated JSON: " + jsonString);
-
-			try {
-				int write_rc = resultQueue.write( jsonString );
-
-				if( write_rc < 0 ) {
-					logger.error("Write failed: " + resultQueue.path + "," + resultQueue.qname + "," + " rc: " + write_rc);
-					resultQueue.close();
-					return;
+				// 서버로부터 메시지 길이 및 메시지 읽기
+				int messageLength = in_socket.readInt();
+				if (messageLength > 0) {
+					byte[] receivedData = new byte[messageLength];
+					in_socket.readFully(receivedData, 0, messageLength);
+					String receivedMessage = new String(receivedData);
+					System.out.println("Server response: " + receivedMessage);
 				}
-				else if( write_rc == 0 ) { // queue is full
-					logger.info("full: " + resultQueue.path + "," + resultQueue.qname + "," + " rc: " + write_rc);
-					try {
-						Thread.sleep(10); // Pause for 1 second (1000)
-					}
-					catch(InterruptedException ex) {
-						Thread.currentThread().interrupt();
-					}
-					continue;
-				}
-				else {
-					long out_seq = resultQueue.get_out_seq();
-					long out_run_time = resultQueue.get_out_run_time();
+				// json msg parsing
 
-					System.out.println("("+threadId+")->receive thread:"+ "enQ success: " + "seq=" + out_seq + "," + "rc:" + write_rc);
-					try {
-						Thread.sleep(100); // Pause for 1 second (1000)
+				// 새로운 JSON 생성
+				JSONObject resultJson = new JSONObject();
+
+
+				resultJson.put("HISTORY_KEY", "RANDOM_KEY_0000000");
+				resultJson.put("RESP_KIND", 30);
+				resultJson.put("STATUS_CODE", "1");
+				resultJson.put("RESULT_CODE", "0000");
+				resultJson.put("RCS_MESSAGE", "success");
+
+				String currentDateTime = getCurrentTime(); // 현재 시간을 가져오는 방법이 구현돼 있어야 함
+				resultJson.put("RCS_SND_DTM", currentDateTime);
+				resultJson.put("RCS_RCCP_DTM", currentDateTime);
+				resultJson.put("AGENT_CODE", "MY");
+
+				String jsonString = resultJson.toString();
+				logger.debug("Generated JSON: " + jsonString);
+
+				try {
+					int write_rc = resultQueue.write( jsonString );
+
+					if( write_rc < 0 ) {
+						logger.error("Write failed: " + resultQueue.path + "," + resultQueue.qname + "," + " rc: " + write_rc);
+						resultQueue.close();
+						return;
 					}
-					catch(InterruptedException ex) {
+					else if( write_rc == 0 ) { // queue is full
+						logger.info("full: " + resultQueue.path + "," + resultQueue.qname + "," + " rc: " + write_rc);
+						try {
+							Thread.sleep(10); // Pause for 1 second (1000)
+						}
+						catch(InterruptedException ex) {
 							Thread.currentThread().interrupt();
+						}
+						continue;
 					}
-					continue;
-				}
-			} catch (Exception e) {
-				logger.error("("+threadId+")"+ "resultQueue.write() 오류: " + e.getMessage());
-			}
+					else {
+						long out_seq = resultQueue.get_out_seq();
+						long out_run_time = resultQueue.get_out_run_time();
 
+						System.out.println("("+threadId+")->receive thread:"+ "enQ success: " + "seq=" + out_seq + "," + "rc:" + write_rc);
+						try {
+							Thread.sleep(100); // Pause for 1 second (1000)
+						}
+						catch(InterruptedException ex) {
+								Thread.currentThread().interrupt();
+						}
+						continue;
+					}
+				} catch (Exception e) {
+					logger.error("("+threadId+")"+ "resultQueue.write() 오류: " + e.getMessage());
+				}
+
+			}
+		} catch (IOException e) {
+            logger.error("(" + threadId + ")" + "socket:" + e.getMessage());
+			e.printStackTrace();
+			return;
 		}
 	}
 
@@ -250,8 +265,8 @@ public class CoAgent {
 		// 3-th argument is loglevel. (0: trace, 1: debug, 2: info, 3: Warning, 4: error, 5: emerg, 6: request)
 		// Use 1 in dev and 4 prod.
 
-		FileQueueJNI queue = new FileQueueJNI( threadId, "/tmp/sender_jni.log", 4, qPath, qName);
-		if(  (rc = queue.open()) < 0 ) {
+		FileQueueJNI requestQueue = new FileQueueJNI( threadId, "/tmp/sender_jni.log", 4, qPath, qName);
+		if(  (rc = requestQueue.open()) < 0 ) {
 			logger.error("("+threadId+")"+ "open failed: " + "qPath="+qPath + ", qName=" + qName + ", rc=" + rc);
 			return;
 		}
@@ -292,27 +307,27 @@ public class CoAgent {
 				while (true) {
 					int read_rc = 0;
 
-					read_rc = queue.readXA(); // XA read 
+					read_rc = requestQueue.readXA(); // XA read 
 					if( read_rc < 0 ) {
-						logger.error("("+threadId+")"+ "readXA failed: " + queue.path + "," + queue.qname + "," + " rc: " + read_rc);
+						logger.error("("+threadId+")"+ "readXA failed: " + requestQueue.path + "," + requestQueue.qname + "," + " rc: " + read_rc);
 						break;
 					}
 
 					if( read_rc == 0 ) {
-						logger.debug("("+threadId+")"+ "There is no data(empty) : " + queue.path + "," + queue.qname + "," + " rc: " + read_rc);
+						logger.debug("("+threadId+")"+ "There is no data(empty) : " + requestQueue.path + "," + requestQueue.qname + "," + " rc: " + read_rc);
 						Thread.sleep(1000); // Pause for 1 second
 						continue;
 					}
 
-					String data = queue.get_out_msg();
-					long out_seq = queue.get_out_seq();
-					String out_unlink_filename = queue.get_out_unlink_filename();
-					long out_run_time = queue.get_out_run_time();
+					String data = requestQueue.get_out_msg();
+					long out_seq = requestQueue.get_out_seq();
+					String out_unlink_filename = requestQueue.get_out_unlink_filename();
+					long out_run_time = requestQueue.get_out_run_time();
 
 
 					writeMessageToFile(threadId, data); // 파일에 메시지 쓰기
 					logger.debug("("+threadId+")"+ "backup file writing success");
-					queue.commitXA();
+					requestQueue.commitXA();
 					logger.debug("("+threadId+")"+ "normal data: commitXA() sucesss seq : " + out_seq);
 
 					boolean your_job_result = DoMessage(threadId, read_rc, out_seq, out_run_time,  data, out_socket, in_socket, ackQueue ); // 화면에 메시지 출력
@@ -332,7 +347,7 @@ public class CoAgent {
 						logger.debug("("+threadId+")"+ "deleteFile() sucesss seq : " + out_seq);
 					}
 					else { // abnormal data
-						queue.cancelXA();
+						requestQueue.cancelXA();
 						logger.debug("("+threadId+")"+ "abnormal data: cancelXA() sucesss seq : " + out_seq);
 						break;
 					}
@@ -342,7 +357,7 @@ public class CoAgent {
 				logger.error("Thread " + threadId + " interrupted.");
 				
 			} finally {
-				queue.close();
+				requestQueue.close();
 			}
 		} catch (IOException e) {
             logger.error("(" + threadId + ")" + "socket:" + e.getMessage());
@@ -500,8 +515,8 @@ public class CoAgent {
     }
 
 	// Loading configuration file
-	public static Config readConfigFromFile(String filePath) {
-        Config config = null;
+	public static AgentConfig readConfigFromFile(String filePath) {
+        AgentConfig config = null;
 
         try {
             // XML 파일을 파싱하여 Document 객체를 생성합니다.
@@ -525,13 +540,16 @@ public class CoAgent {
             String senderThreads_str = doc.getElementsByTagName("senderThreads").item(0).getTextContent();
 			int senderThreads = Integer.parseInt(senderThreads_str); 
 
-            String serverIp = doc.getElementsByTagName("serverIp").item(0).getTextContent();
+            String ackServerIp = doc.getElementsByTagName("ackServerIp").item(0).getTextContent();
+            String ackServerPort_str = doc.getElementsByTagName("ackServerPort").item(0).getTextContent();
+			int ackServerPort = Integer.parseInt(ackServerPort_str); 
 
-            String serverPort_str = doc.getElementsByTagName("serverPort").item(0).getTextContent();
-			int serverPort = Integer.parseInt(serverPort_str); 
+            String resultServerIp = doc.getElementsByTagName("resultServerIp").item(0).getTextContent();
+            String resultServerPort_str = doc.getElementsByTagName("resultServerPort").item(0).getTextContent();
+			int resultServerPort = Integer.parseInt(resultServerPort_str); 
 
             // Config 객체를 생성합니다.
-            config = new Config(logLevel, logFilePath, resultQueuePath, resultQueueName, deQueuePath, deQueueName, userWorkingTimeForSimulate, senderThreads, serverIp, serverPort);
+            config = new AgentConfig(logLevel, logFilePath, resultQueuePath, resultQueueName, deQueuePath, deQueueName, userWorkingTimeForSimulate, senderThreads, ackServerIp, ackServerPort, resultServerIp, resultServerPort);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -540,7 +558,7 @@ public class CoAgent {
         return config;  // Config 객체 반환
     }
 	// print Config
-	private static void printConfig( Config config) {
+	private static void printConfig( AgentConfig config) {
 		System.out.println("---------- < configuration begin >--------------- ");
 		System.out.println("\t- Log Level: " + config.logLevel);
 		System.out.println("\t- Log File Path: " + config.logFilePath);
@@ -550,8 +568,10 @@ public class CoAgent {
 		System.out.println("\t- DeQueue Name: " + config.deQueueName);
 		System.out.println("\t- User Working Time for Simulating : " + config.userWorkingTimeForSimulate);
 		System.out.println("\t- Sender Threads: " + config.senderThreads);
-		System.out.println("\t- Server IP for Simulating : " + config.serverIp);
-		System.out.println("\t- Server PORT for Simulating : " + config.serverPort);
+		System.out.println("\t- ackServer IP for Simulating : " + config.ackServerIp);
+		System.out.println("\t- ackServer PORT for Simulating : " + config.ackServerPort);
+		System.out.println("\t- resultServer IP for Simulating : " + config.resultServerIp);
+		System.out.println("\t- resultServer PORT for Simulating : " + config.resultServerPort);
 		System.out.println("---------- < configuration end >--------------- ");
 	}
 	private static boolean JsonParserAndVerify ( int threadId, String jsonString, boolean hcFlag ) {
