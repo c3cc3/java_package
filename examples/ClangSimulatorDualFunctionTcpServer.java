@@ -1,11 +1,77 @@
+// Socket TCP
 import java.io.*;
 import java.net.*;
 
+// XML configuration
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.DocumentBuilder;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.Node;
+import org.w3c.dom.Element;
+
+// for your input
+import java.util.Scanner;
+
+// 구성 값을 저장할 클래스를 정의합니다.
+class Config {
+    String logLevel;
+    String logFilePath;
+    String QueuePath;
+    String QueueName;
+    int userWorkingTimeForSimulate;
+	int		ackPort;
+	int		resultPort;
+
+    // 생성자
+    public Config(String logLevel, String logFilePath, String QueuePath, String QueueName,
+                  int userWorkingTimeForSimulate, int ackPort, int resultPort) {
+        this.logLevel = logLevel;
+        this.logFilePath = logFilePath;
+        this.QueuePath = QueuePath;
+        this.QueueName = QueueName;
+        this.userWorkingTimeForSimulate = userWorkingTimeForSimulate;
+        this.ackPort = ackPort;
+        this.resultPort = resultPort;
+    }
+}
 public class ClangSimulatorDualFunctionTcpServer {
 
     public static void main(String[] args) {
         int echoPort = 5001;
         int messagePort = 5002;
+
+		System.out.println("args.length=" + args.length);
+		for(int i = 0; i< args.length; i++) {
+			System.out.println(String.format("Command Line Argument %d is %s", i, args[i]));
+		}
+
+		if( args.length != 1) {
+			System.out.println("Usage: $ java ClangSimulatorDualFunctionTcpServer [xml_config_file] <enter>");
+			System.out.println("Usage: $ java ClangSimulatorDualFunctionTcpServer CoAgentConf.xml <enter>");
+			return;
+		}
+
+		// 입력받은 경로로 구성 파일을 읽습니다.
+        Config config = readConfigFromFile(args[0]);
+
+		// 모든 구성 값을 출력합니다.
+        if (config != null) {
+			printConfig( config );
+			Scanner scanner = new Scanner(System.in);
+        	System.out.print("Enter 'y' to continue: ");
+        	String userInput = scanner.nextLine();
+
+			// 사용자 입력이 'y'인지 확인
+			if (userInput.equalsIgnoreCase("y")) {
+				System.out.println("You entered 'y'. Continuing...");
+			} else {
+				System.out.println("You did not enter 'y'. Exiting...");
+				return;
+			}
+			scanner.close();
+        }
+
 
         Thread echoServerThread = new Thread(() -> startEchoServer(echoPort));
         Thread messageServerThread = new Thread(() -> startMessageSenderServer(messagePort));
@@ -89,4 +155,53 @@ public class ClangSimulatorDualFunctionTcpServer {
             System.out.println("Message sender connection closed.");
         }
     }
+
+	// Loading configuration file
+	public static Config readConfigFromFile(String filePath) {
+        Config config = null;
+
+        try {
+            // XML 파일을 파싱하여 Document 객체를 생성합니다.
+            File inputFile = new File(filePath);
+            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+            Document doc = dBuilder.parse(inputFile);
+            doc.getDocumentElement().normalize();
+
+            // 각 설정 값을 읽어옵니다.
+            String logLevel = doc.getElementsByTagName("logLevel").item(0).getTextContent();
+            String logFilePath = doc.getElementsByTagName("logFilePath").item(0).getTextContent();
+            String QueuePath = doc.getElementsByTagName("QueuePath").item(0).getTextContent();
+            String QueueName = doc.getElementsByTagName("QueueName").item(0).getTextContent();
+
+            String userWorkingTime_str = doc.getElementsByTagName("userWorkingTimeForSimulate").item(0).getTextContent();
+			int userWorkingTimeForSimulate = Integer.parseInt(userWorkingTime_str); 
+
+            String ackPort_str = doc.getElementsByTagName("ackPort").item(0).getTextContent();
+			int ackPort = Integer.parseInt(ackPort_str); 
+            String resultPort_str = doc.getElementsByTagName("resultPort").item(0).getTextContent();
+			int resultPort = Integer.parseInt(resultPort_str); 
+
+
+            // Config 객체를 생성합니다.
+            config = new Config(logLevel, logFilePath, QueuePath, QueueName, userWorkingTimeForSimulate, ackPort, resultPort );
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return config;  // Config 객체 반환
+    }
+	
+	// print Config
+	private static void printConfig( Config config) {
+		System.out.println("---------- < configuration begin >--------------- ");
+		System.out.println("\t- Log Level: " + config.logLevel);
+		System.out.println("\t- Log File Path: " + config.logFilePath);
+		System.out.println("\t- Queue Path: " + config.QueuePath);
+		System.out.println("\t- Queue Name: " + config.QueueName);
+		System.out.println("\t- User Working Time for Simulating : " + config.userWorkingTimeForSimulate);
+		System.out.println("\t- ack PORT for Simulating : " + config.ackPort);
+		System.out.println("\t- result PORT for Simulating : " + config.resultPort);
+		System.out.println("---------- < configuration end >--------------- ");
+	}
 }

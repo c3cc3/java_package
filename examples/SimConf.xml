@@ -1,0 +1,10 @@
+<configuration>
+	<!-- Log level can be one of: TRACE:0, DEBUG:1, INFO:2, ERROR:4 -->
+    <logLevel>4</logLevel>
+	<logFilePath>/ums24/wiseu/fq/logs/CoAgent.log</logFilePath>
+	<QueuePath>/ums24/wiseu/fq/enmq</QueuePath>
+	<QueueName>TST</QueueName>
+	<userWorkingTimeForSimulate>3</userWorkingTimeForSimulate>
+	<ackPort>5001</ackPort>
+	<resultPort>5002</resultPort>
+</configuration>
