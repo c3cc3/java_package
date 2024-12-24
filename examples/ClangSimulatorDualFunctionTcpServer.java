@@ -93,31 +93,32 @@ public class ClangSimulatorDualFunctionTcpServer {
         }
 
 
-        Thread echoServerThread = new Thread(() -> startEchoServer(config));
+        Thread receiveRequestServerThread = new Thread(() -> receiveRequestServer(config));
         Thread messageServerThread = new Thread(() -> startMessageSenderServer(config));
 
-        echoServerThread.start();
+        receiveRequestServerThread.start();
         messageServerThread.start();
     }
 
-    // 에코 기능을 수행하는 서버
-    public static void startEchoServer(Config config) {
+    // 발송요청을 받아 큐에 넣고 ACK를 답하는 서버
+    public static void receiveRequestServer(Config config) {
 		// File Queue Open
+		// 
 		int rc;
 		int queueIndex = 0;
-		FileQueueJNI interThreadComQueue = new FileQueueJNI( queueIndex, "/tmp/ackServer.log", 4, config.interThreadComQueuePath, config.interThreadComQueueName);
+		FileQueueJNI interThreadComQueue = new FileQueueJNI( queueIndex, "/tmp/receiveRequestServer.log", 4, config.interThreadComQueuePath, config.interThreadComQueueName);
 		if(  (rc = interThreadComQueue.open()) < 0 ) {
 			System.out.println("open failed: " + "qPath="+ config.interThreadComQueuePath + ", qName=" + config.interThreadComQueueName + ", rc=" + rc);
 			return;
 		}
 
         try (ServerSocket serverSocket = new ServerSocket(config.ackPort)) {
-            System.out.println("Echo Server listening on port " + config.ackPort);
+            System.out.println("Receive Request Server listening on port " + config.ackPort);
             System.out.println("interThreadComQueue info:" + config.interThreadComQueuePath + ", " +config.interThreadComQueueName);
 
             while (true) {
                 Socket clientSocket = serverSocket.accept();
-                new Thread(() -> handleEchoClient(clientSocket, interThreadComQueue)).start();
+                new Thread(() -> handleAckClient(clientSocket, interThreadComQueue)).start();
             }
         } catch (IOException e) {
             System.err.println("Could not listen on port " + config.ackPort);
@@ -125,19 +126,27 @@ public class ClangSimulatorDualFunctionTcpServer {
         }
     }
 
-    public static void handleEchoClient(Socket clientSocket, FileQueueJNI interThreadComQueue) {
+    public static void handleAckClient(Socket clientSocket, FileQueueJNI interThreadComQueue) {
         try (
-            BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            PrintWriter writer = new PrintWriter(clientSocket.getOutputStream(), true);
+            DataInputStream reader = new DataInputStream(clientSocket.getInputStream());
+            DataOutputStream writer = new DataOutputStream(clientSocket.getOutputStream());
         ) {
+			// 길이헤더 수신
+            int responseLength = reader.readInt();
+            if( responseLength <= 0 ) {
+				System.err.println("reader.readInt() error.");
+				return;
+			}
+			// 수신 byte[] 버퍼 생성
+            byte[] receiveData = new byte[responseLength];
+            reader.readFully( receiveData, 0, responseLength);
+			String requestData = new String(receiveData);
+            System.out.println("Received (request from client): " + requestData);
 
-            String receivedMessage;
-            while ((receivedMessage = reader.readLine()) != null) {
-                System.out.println("Received (Echo): " + receivedMessage);
-
-				// enQueue 
-				try {
-					int write_rc = interThreadComQueue.write( receivedMessage );
+			// enQueue 
+			try {
+				while(true) {
+					int write_rc = interThreadComQueue.write( requestData );
 
 					if( write_rc < 0 ) {
 						System.err.println("Write failed: " + interThreadComQueue.path + "," + interThreadComQueue.qname + "," + " rc: " + write_rc);
@@ -147,7 +156,7 @@ public class ClangSimulatorDualFunctionTcpServer {
 					else if( write_rc == 0 ) { // queue is full
 						System.out.println("full: " + interThreadComQueue.path + "," + interThreadComQueue.qname + "," + " rc: " + write_rc);
 						try {
-							Thread.sleep(10); // Pause for 1 second (1000)
+							Thread.sleep(1000); // Pause for 1 second (1000)
 						}
 						catch(InterruptedException ex) {
 							Thread.currentThread().interrupt();
@@ -167,43 +176,51 @@ public class ClangSimulatorDualFunctionTcpServer {
 						}
 						continue;
 					}
-				} catch (Exception e) {
-					System.err.println("(echoClient)"+ "resultQueue.write() 오류: " + e.getMessage());
 				}
+			} catch (Exception e) {
+				System.err.println("(echoClient)"+ "resultQueue.write() 오류: " + e.getMessage());
+			}
 
-				// parsing json message and get HISTORY_KEY
-				boolean healthCheckFlag = false;
-				String returnSequence = null;
+			// parsing json message and get HISTORY_KEY
+			boolean healthCheckFlag = false;
+			String returnSequence = null;
 
-				boolean tf=JsonParserAndVerify (receivedMessage, healthCheckFlag, returnSequence );
-				if( tf == false && returnSequence != null ) {
-					System.err.println("(echoClient)" + "JdonParerAndVerify() interrupted.");
-					return;
-				}
-				if( healthCheckFlag == true) {
-					System.err.println("(echoClient)" + "Health checking message.");
-					return;
-				}
+			boolean tf=JsonParserAndVerify (requestData, healthCheckFlag, returnSequence );
+			if( tf == false && returnSequence != null ) {
+				System.err.println("(echoClient)" + "JdonParerAndVerify() interrupted.");
+				return;
+			}
+			if( healthCheckFlag == true) {
+				System.err.println("(echoClient)" + "Health checking message.");
+				return;
+			}
 
-				// Make a new ACK json message
-				JSONObject ackJson = new JSONObject();
+			// Make a new ACK json message
+			JSONObject ackJson = new JSONObject();
 
-				ackJson.put("HISTORY_KEY", returnSequence);
-				ackJson.put("RESP_KIND", 30);
-				ackJson.put("STATUS_CODE", "1");
-				ackJson.put("RESULT_CODE", "0000");
-				ackJson.put("RCS_MESSAGE", "success");
+			ackJson.put("HISTORY_KEY", returnSequence);
+			ackJson.put("RESP_KIND", 30);
+			ackJson.put("STATUS_CODE", "1");
+			ackJson.put("RESULT_CODE", "0000");
+			ackJson.put("RCS_MESSAGE", "success");
 
-				String currentDateTime = getCurrentTime(); // 현재 시간을 가져오는 방법이 구현돼 있어야 함
-				ackJson.put("RCS_SND_DTM", currentDateTime);
-				ackJson.put("RCS_RCCP_DTM", currentDateTime);
-				ackJson.put("AGENT_CODE", "MY");
+			String currentDateTime = getCurrentTime(); // 현재 시간을 가져오는 방법이 구현돼 있어야 함
+			ackJson.put("RCS_SND_DTM", currentDateTime);
+			ackJson.put("RCS_RCCP_DTM", currentDateTime);
+			ackJson.put("AGENT_CODE", "MY");
 
-				String jsonString = ackJson.toString();
-				// logger.debug("Generated JSON: " + jsonString);
-				
-                writer.println(jsonString);  
-            }
+			String jsonString = ackJson.toString();
+			// logger.debug("Generated JSON: " + jsonString);
+			
+			// 메시지를 바이트 배열로 변환 후 길이와 함께 전송
+			try {
+				byte[] data = jsonString.getBytes();
+				writer.writeInt( data.length ); // 길이 Prefix header 전송
+				writer.write( data ); // 서버에 메시지 전송
+			} catch( IOException e) {
+				System.err.println("(receiveRequestServer)" + "writer.write:" + e.getMessage());
+				e.printStackTrace();
+			}
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
@@ -212,7 +229,7 @@ public class ClangSimulatorDualFunctionTcpServer {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            System.out.println("Echo connection closed.");
+            System.out.println("receiveRequestServer connection closed.");
         }
     }
 
@@ -243,10 +260,9 @@ public class ClangSimulatorDualFunctionTcpServer {
     public static void handleMessageClient(Socket clientSocket, FileQueueJNI interThreadComQueue) {
 		long threadId = Thread.currentThread().getId();
         try (
-            BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            PrintWriter writer = new PrintWriter(clientSocket.getOutputStream(), true);
+            DataInputStream reader = new DataInputStream(clientSocket.getInputStream());
+            DataOutputStream writer = new DataOutputStream(clientSocket.getOutputStream());
         ) {
-
 			// deQueue(while)
 			try {
 				// 무한반복
@@ -276,19 +292,43 @@ public class ClangSimulatorDualFunctionTcpServer {
 					System.out.println("("+threadId+")"+ "normal data: commitXA() sucesss seq : " + out_seq);
 
 					// Make a json object with queue data.
+
+
+
+
+
+
 					// takeout SEQ from json.
 					// Make a json result message.
 					// send resultMessage to client.
 
 					// 먼저 메시지를 보내고 클라이언트의 응답을 기다립니다.
-					String initialMessage = "Hello from server!";
-					System.out.println("Sending: " + initialMessage);
-					writer.println(initialMessage);
+					String resultMessage = "Hello from server!";
+					System.out.println("Sending: " + resultMessage);
+
+					// 메시지를 바이트 배열로 변환 후 길이와 함께 전송
+					try {
+						byte[] resultData = resultMessage.getBytes();
+						writer.writeInt( resultData.length ); // 길이 Prefix header 전송
+						writer.write( resultData ); // 서버에 메시지 전송
+					} catch( IOException e) {
+						System.err.println("(messageSenderServer)" + "writer.write:" + e.getMessage());
+						e.printStackTrace();
+					}
 					
 					String responseMessage;
-					if ((responseMessage = reader.readLine()) != null) {
-						System.out.println("Received in response: " + responseMessage);
+					int responseLength = reader.readInt();
+					if( responseLength <= 0 ) {
+						System.err.println("Header integer receiving error.");
+						return;
 					}
+                	System.out.println("received agent response(ACK-header lengh): " + responseLength);
+
+					byte[] receiveData = new byte[responseLength];
+                	reader.readFully( receiveData, 0, responseLength);
+                	String serverResponse = new String(receiveData);
+                	System.out.println("received agent response(ACK-body): " + serverResponse);
+
 					// 응답이 yes 인지 확인한다.
 					boolean your_job_result = true;
 					

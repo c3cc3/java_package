@@ -55,9 +55,7 @@ class Config {
 	int		serverPort;
 
     // 생성자
-    public Config(String logLevel, String logFilePath, String resultQueuePath, String resultQueueName,
-                  String deQueuePath, String deQueueName, int userWorkingTimeForSimulate, int senderThreads,
-				  String serverIp, int serverPort) {
+    public Config(String logLevel, String logFilePath, String resultQueuePath, String resultQueueName, String deQueuePath, String deQueueName, int userWorkingTimeForSimulate, int senderThreads, String serverIp, int serverPort) {
         this.logLevel = logLevel;
         this.logFilePath = logFilePath;
         this.resultQueuePath = resultQueuePath;
@@ -532,11 +530,8 @@ public class CoAgent {
             String serverPort_str = doc.getElementsByTagName("serverPort").item(0).getTextContent();
 			int serverPort = Integer.parseInt(serverPort_str); 
 
-
             // Config 객체를 생성합니다.
-            config = new Config(logLevel, logFilePath, resultQueuePath, resultQueueName, 
-                                deQueuePath, deQueueName, userWorkingTimeForSimulate, senderThreads,
-								serverIp, serverPort );
+            config = new Config(logLevel, logFilePath, resultQueuePath, resultQueueName, deQueuePath, deQueueName, userWorkingTimeForSimulate, senderThreads, serverIp, serverPort);
 
         } catch (Exception e) {
             e.printStackTrace();

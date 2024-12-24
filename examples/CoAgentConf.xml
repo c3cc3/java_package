@@ -6,7 +6,7 @@
 	<resultQueueName>RCS_HIST_RSLT</resultQueueName>
 	<deQueuePath>/ums24/wiseu/fq/enmq</deQueuePath>
 	<deQueueName>MY_SM_ONL</deQueueName>
-	<userWorkingTimeForSimulate>10</userWorkingTimeForSimulate>
+	<userWorkingTimeForSimulate>3</userWorkingTimeForSimulate>
 	<senderThreads>10</senderThreads>
 	<serverIp>127.0.0.1</serverIp>
 	<serverPort>8080</serverPort>
