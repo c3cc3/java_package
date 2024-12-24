@@ -241,28 +241,77 @@ public class ClangSimulatorDualFunctionTcpServer {
     }
 
     public static void handleMessageClient(Socket clientSocket, FileQueueJNI resultQueue) {
+		long threadId = Thread.currentThread().getId();
         try (
             BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             PrintWriter writer = new PrintWriter(clientSocket.getOutputStream(), true);
         ) {
 
 			// deQueue(while)
+			try {
+				// 무한반복
+				while (true) {
+					int read_rc = 0;
 
-			// Make a json result message.
+					read_rc = resultQueue.readXA(); // XA read 
+					if( read_rc < 0 ) {
+						System.err.println("("+threadId+")"+ "readXA failed: " + resultQueue.path + "," + resultQueue.qname + "," + " rc: " + read_rc);
+						break;
+					}
 
-			// send resultMessage to client.
+					if( read_rc == 0 ) {
+						System.out.println("("+threadId+")"+ "There is no data(empty) : " + resultQueue.path + "," + resultQueue.qname + "," + " rc: " + read_rc);
+						Thread.sleep(1000); // Pause for 1 second
+						continue;
+					}
 
+					String data = resultQueue.get_out_msg();
+					long out_seq = resultQueue.get_out_seq();
+					String out_unlink_filename = resultQueue.get_out_unlink_filename();
+					long out_run_time = resultQueue.get_out_run_time();
 
-            // 먼저 메시지를 보내고 클라이언트의 응답을 기다립니다.
-            String initialMessage = "Hello from server!";
-            System.out.println("Sending: " + initialMessage);
-            writer.println(initialMessage);
-            
-            String responseMessage;
-            if ((responseMessage = reader.readLine()) != null) {
-                System.out.println("Received in response: " + responseMessage);
-            }
-			// OK 가 들어오면 filequeue commit 을 수행한다.
+					writeMessageToFile(threadId, data); // 파일에 메시지 쓰기
+					System.out.println("("+threadId+")"+ "backup file writing success");
+					resultQueue.commitXA();
+					System.out.println("("+threadId+")"+ "normal data: commitXA() sucesss seq : " + out_seq);
+
+					// Make a json object with queue data.
+					// takeout SEQ from json.
+					// Make a json result message.
+					// send resultMessage to client.
+
+					// 먼저 메시지를 보내고 클라이언트의 응답을 기다립니다.
+					String initialMessage = "Hello from server!";
+					System.out.println("Sending: " + initialMessage);
+					writer.println(initialMessage);
+					
+					String responseMessage;
+					if ((responseMessage = reader.readLine()) != null) {
+						System.out.println("Received in response: " + responseMessage);
+					}
+					// 응답이 yes 인지 확인한다.
+					boolean your_job_result = true;
+					
+					// OK 가 들어오면 filequeue commit 을 수행한다.
+
+					if( your_job_result == true) { // normal data
+						deleteFile(threadId); // 파일 삭제
+						System.out.println("("+threadId+")"+ "deleteFile() sucesss seq : " + out_seq);
+					}
+					else { // abnormal data
+						resultQueue.cancelXA();
+						System.out.println("("+threadId+")"+ "abnormal data: cancelXA() sucesss seq : " + out_seq);
+						break;
+					}
+				}
+			} catch (InterruptedException ex) {
+				Thread.currentThread().interrupt();
+				System.err.println("Thread " + threadId + " interrupted.");
+				
+			} finally {
+				resultQueue.close();
+			}
+
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -410,5 +459,28 @@ public class ClangSimulatorDualFunctionTcpServer {
             System.err.println("Error verifying or parsing JSON: " + e.getMessage());
 			return false;
         }
+    }
+	
+    // 스레드 ID에 따른 파일에 메시지 쓰기
+    private static void writeMessageToFile(long threadId, String message) {
+        String fileName = "thread_" + threadId + ".txt";
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName, true))) {
+            writer.write(message);
+            writer.newLine();
+            writer.flush();
+        } catch (IOException e) {
+            System.err.println("(" + threadId + ")" + "Error writing to file: " + e.getMessage());
+        }
+    }
+    // 스레드 ID에 따른 파일 삭제
+    private static void deleteFile(long threadId) {
+        String fileName = "thread_" + threadId + ".txt";
+        File file = new File(fileName);
+        if (file.delete()) {
+            System.out.println("(" + threadId + ")" + "Deleted file: " + fileName);
+        } else {
+            System.err.println("(" + threadId + ")" + "Failed to delete file: " + fileName);
+        }
+		return;
     }
 }
