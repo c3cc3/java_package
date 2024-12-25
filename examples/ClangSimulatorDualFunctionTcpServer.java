@@ -199,8 +199,8 @@ public class ClangSimulatorDualFunctionTcpServer {
 				// Make a new ACK json message
 				JSONObject ackJson = new JSONObject();
 
-				ackJson.put("HISTORY_KEY", returnSequence);
-				ackJson.put("RESP_KIND", 30);
+				ackJson.put("HISTORY_KEY", returnSequence.toString());
+				ackJson.put("RESP_KIND", "ACK");
 				ackJson.put("STATUS_CODE", "1");
 				ackJson.put("RESULT_CODE", "0000");
 				ackJson.put("RCS_MESSAGE", "success");
@@ -211,7 +211,6 @@ public class ClangSimulatorDualFunctionTcpServer {
 				ackJson.put("AGENT_CODE", "MY");
 
 				String jsonString = ackJson.toString();
-				// logger.debug("Generated JSON: " + jsonString);
 				
 				// 메시지를 바이트 배열로 변환 후 길이와 함께 전송
 				try {
@@ -261,6 +260,10 @@ public class ClangSimulatorDualFunctionTcpServer {
         }
     }
 
+	// 1. deQ_XA
+	// 2. json 에서 history_key를 꺼낸다.
+	// 3. Make a new resultJson message.
+	// 4. 고객 수신여부의 resultJson을 Agent 소켓에 전송
     public static void handleMessageClient(Socket clientSocket, FileQueueJNI interThreadComQueue) {
 		long threadId = Thread.currentThread().getId();
         try (
@@ -296,56 +299,75 @@ public class ClangSimulatorDualFunctionTcpServer {
 					interThreadComQueue.commitXA();
 					System.out.println("("+threadId+")"+ "normal data: commitXA() sucesss seq : " + out_seq);
 
-					// Make a json object with queue data.
+					// deQ 데이터에서 HISTORY_KEY(SEQ)를 꺼낸다.
 
+					StringBuilder returnHistoryKey = new StringBuilder();
+					StringBuilder returnReceiver = new StringBuilder();
+					StringBuilder returnChannel = new StringBuilder();
+					StringBuilder returnMsgType = new StringBuilder();
+					boolean tf =  JsonParserAndVerify (data, returnHistoryKey, returnReceiver, returnChannel, returnMsgType );
 
+					if( tf == true ) { // 성공메시지를 만든다.
+						// Make a new json object with queue data.
+						// 새로운 JSON 생성
+						JSONObject resultJson = new JSONObject();
 
+						resultJson.put("HISTORY_KEY", returnHistoryKey);
+						resultJson.put("RESP_KIND", "RSLT");
+						resultJson.put("STATUS_CODE", "1");
+						resultJson.put("RESULT_CODE", "0000");
+						resultJson.put("RCS_MESSAGE", "success");
 
+						String currentDateTime = getCurrentTime(); // 현재 시간을 가져오는 방법이 구현돼 있어야 함
+						resultJson.put("RCS_SND_DTM", currentDateTime);
+						resultJson.put("RCS_RCCP_DTM", currentDateTime);
+						resultJson.put("AGENT_CODE", "MY");
 
-					// takeout SEQ from json.
-					// Make a json result message.
-					// send resultMessage to client.
+						String resultMessage = resultJson.toString();
+						System.out.println("Generated JSON: " + resultMessage);
 
-					// 먼저 메시지를 보내고 클라이언트의 응답을 기다립니다.
-					String resultMessage = "Hello from server!";
-					System.out.println("Sending: " + resultMessage);
+						System.out.println("Sending: " + resultMessage);
 
-					// 메시지를 바이트 배열로 변환 후 길이와 함께 전송
-					try {
-						byte[] resultData = resultMessage.getBytes();
-						writer.writeInt( resultData.length ); // 길이 Prefix header 전송
-						writer.write( resultData ); // 서버에 메시지 전송
-					} catch( IOException e) {
-						System.err.println("(messageSenderServer)" + "writer.write:" + e.getMessage());
-						e.printStackTrace();
+						// 메시지를 바이트 배열로 변환 후 길이와 함께 전송
+						try {
+							byte[] resultData = resultMessage.getBytes();
+							writer.writeInt( resultData.length ); // 길이 Prefix header 전송
+							writer.write( resultData ); // 서버에 메시지 전송
+						} catch( IOException e) {
+							System.err.println("(messageSenderServer)" + "writer.write:" + e.getMessage());
+							e.printStackTrace();
+						}
+						
+						String responseMessage;
+						int responseLength = reader.readInt();
+						if( responseLength <= 0 ) {
+							System.err.println("Header integer receiving error.");
+							return;
+						}
+						System.out.println("received agent response(ACK-header lengh): " + responseLength);
+
+						byte[] receiveData = new byte[responseLength];
+						reader.readFully( receiveData, 0, responseLength);
+						String serverResponse = new String(receiveData);
+						System.out.println("received agent response(ACK-body): " + serverResponse);
+
+						// 응답이 yes 인지 확인한다.
+						boolean your_job_result = true;
+						
+						// OK 가 들어오면 filequeue commit 을 수행한다.
+
+						if( your_job_result == true) { // normal data
+							deleteFile(threadId); // 파일 삭제
+							System.out.println("("+threadId+")"+ "deleteFile() sucesss seq : " + out_seq);
+						}
+						else { // abnormal data
+							interThreadComQueue.cancelXA();
+							System.out.println("("+threadId+")"+ "abnormal data: cancelXA() sucesss seq : " + out_seq);
+							break;
+						}
 					}
-					
-					String responseMessage;
-					int responseLength = reader.readInt();
-					if( responseLength <= 0 ) {
-						System.err.println("Header integer receiving error.");
-						return;
-					}
-                	System.out.println("received agent response(ACK-header lengh): " + responseLength);
-
-					byte[] receiveData = new byte[responseLength];
-                	reader.readFully( receiveData, 0, responseLength);
-                	String serverResponse = new String(receiveData);
-                	System.out.println("received agent response(ACK-body): " + serverResponse);
-
-					// 응답이 yes 인지 확인한다.
-					boolean your_job_result = true;
-					
-					// OK 가 들어오면 filequeue commit 을 수행한다.
-
-					if( your_job_result == true) { // normal data
+					else { // json parsing error.
 						deleteFile(threadId); // 파일 삭제
-						System.out.println("("+threadId+")"+ "deleteFile() sucesss seq : " + out_seq);
-					}
-					else { // abnormal data
-						interThreadComQueue.cancelXA();
-						System.out.println("("+threadId+")"+ "abnormal data: cancelXA() sucesss seq : " + out_seq);
-						break;
 					}
 				}
 			} catch (InterruptedException ex) {
@@ -366,6 +388,50 @@ public class ClangSimulatorDualFunctionTcpServer {
                 e.printStackTrace();
             }
             System.out.println("Message sender connection closed.");
+        }
+    }
+
+	private static boolean JsonParserAndVerify (String jsonString, StringBuilder returnHistoryKey, StringBuilder returnReceiver, StringBuilder returnChannel, StringBuilder returnMsgType ) {
+
+        // ObjectMapper 인스턴스를 생성합니다.
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        try {
+            // JSON 문자열을 JsonNode로 파싱합니다.
+            JsonNode jsonNode = objectMapper.readTree(jsonString);
+
+            // JSON 검증: 필수 필드가 있는지 확인
+            if (jsonNode.hasNonNull("SEQ") 
+				&& jsonNode.hasNonNull("CHANNEL")
+				&& jsonNode.hasNonNull("MSG_TYPE")
+				&& jsonNode.hasNonNull("RECEIVER")
+			) {
+                // 필드들이 존재하므로 데이터를 읽습니다.
+                String HistoryKey = jsonNode.get("SEQ").asText();
+                String Channel = jsonNode.get("CHANNEL").asText();
+                String MsgType = jsonNode.get("MSG_TYPE").asText();
+                String Receiver = jsonNode.get("RECEIVER").asText();
+
+				returnHistoryKey.append(HistoryKey);
+				returnChannel.append(Channel);
+				returnMsgType.append(MsgType);
+				returnReceiver.append(Receiver);
+
+            	System.out.println("-------------------------- JSON Check OK ------------------------");
+            	System.out.println("\t- SEQ: " + HistoryKey);
+            	System.out.println("\t- CHANNEL: " + Channel);
+            	System.out.println("\t- MSG_TYPE: " + MsgType);
+            	System.out.println("\t- RECEIVER: " + Receiver);
+
+				return true;
+            } else {
+            	System.out.println("--------------------------JSON Check ERROR------------------------");
+				return false;
+            }
+        } catch (Exception e) {
+            // JSON 파싱 중 예외가 발생했을 경우
+            System.err.println("Error verifying or parsing JSON: " + e.getMessage());
+			return false;
         }
     }
 

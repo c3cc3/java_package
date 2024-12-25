@@ -330,6 +330,8 @@ public class CoAgent {
 					requestQueue.commitXA();
 					logger.debug("("+threadId+")"+ "normal data: commitXA() sucesss seq : " + out_seq);
 
+					// 큐에서 꺼낸 데이터를 통신사(Simulator)에 보내고 ACK를 수신한다.
+					// ACK 메시지를 resultQueue 에 넣는다.
 					boolean your_job_result = DoMessage(threadId, read_rc, out_seq, out_run_time,  data, out_socket, in_socket, ackQueue ); // 화면에 메시지 출력
 
 					// input your jobs in here ///////////////////////////////////
@@ -444,6 +446,7 @@ public class CoAgent {
 				String serverResponse = new String(receiveData);
 				logger.info("("+threadId+")" + "received server response(ACK): " + serverResponse);
 
+				// ACK 메시지를 ackQueue 에 넣는다.
 				while(true) {
 					int write_rc = ackQueue.write( serverResponse );
 
