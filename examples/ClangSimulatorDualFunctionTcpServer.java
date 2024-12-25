@@ -168,7 +168,7 @@ public class ClangSimulatorDualFunctionTcpServer {
 							long out_seq = interThreadComQueue.get_out_seq();
 							long out_run_time = interThreadComQueue.get_out_run_time();
 
-							System.out.println("(echoClient)->receive thread:"+ "enQ success: " + "seq=" + out_seq + "," + "rc:" + write_rc);
+							System.out.println("(requestClient)->receive thread:"+ "enQ success: " + "seq=" + out_seq + "," + "rc:" + write_rc);
 							try {
 								Thread.sleep(100); // Pause for 1 second (1000)
 							}
@@ -183,23 +183,20 @@ public class ClangSimulatorDualFunctionTcpServer {
 				}
 
 				// parsing json message and get HISTORY_KEY
-				boolean healthCheckFlag = false;
-				String returnSequence = null;
 
-				boolean tf=JsonParserAndVerify (requestData, healthCheckFlag, returnSequence );
-				if( tf == false && returnSequence != null ) {
-					System.err.println("(echoClient)" + "JdonParerAndVerify() interrupted.");
-					return;
-				}
-				if( healthCheckFlag == true) {
-					System.err.println("(echoClient)" + "Health checking message.");
-					return;
-				}
+				StringBuilder returnHistoryKey = new StringBuilder();
+				StringBuilder returnReceiver = new StringBuilder();
+				StringBuilder returnChannel = new StringBuilder();
+				StringBuilder returnMsgType = new StringBuilder();
+
+				boolean tf =  JsonParserAndVerify (requestData, returnHistoryKey, returnReceiver, returnChannel, returnMsgType );
+
+				System.out.println("JsonParserAndVerify() OK. tf=" + tf);
 
 				// Make a new ACK json message
 				JSONObject ackJson = new JSONObject();
 
-				ackJson.put("HISTORY_KEY", returnSequence.toString());
+				ackJson.put("HISTORY_KEY", returnHistoryKey.toString());
 				ackJson.put("RESP_KIND", "ACK");
 				ackJson.put("STATUS_CODE", "1");
 				ackJson.put("RESULT_CODE", "0000");
@@ -306,13 +303,12 @@ public class ClangSimulatorDualFunctionTcpServer {
 					StringBuilder returnChannel = new StringBuilder();
 					StringBuilder returnMsgType = new StringBuilder();
 					boolean tf =  JsonParserAndVerify (data, returnHistoryKey, returnReceiver, returnChannel, returnMsgType );
-
 					if( tf == true ) { // 성공메시지를 만든다.
 						// Make a new json object with queue data.
 						// 새로운 JSON 생성
 						JSONObject resultJson = new JSONObject();
 
-						resultJson.put("HISTORY_KEY", returnHistoryKey);
+						resultJson.put("HISTORY_KEY", returnHistoryKey.toString());
 						resultJson.put("RESP_KIND", "RSLT");
 						resultJson.put("STATUS_CODE", "1");
 						resultJson.put("RESULT_CODE", "0000");
@@ -326,8 +322,6 @@ public class ClangSimulatorDualFunctionTcpServer {
 						String resultMessage = resultJson.toString();
 						System.out.println("Generated JSON: " + resultMessage);
 
-						System.out.println("Sending: " + resultMessage);
-
 						// 메시지를 바이트 배열로 변환 후 길이와 함께 전송
 						try {
 							byte[] resultData = resultMessage.getBytes();
@@ -337,6 +331,7 @@ public class ClangSimulatorDualFunctionTcpServer {
 							System.err.println("(messageSenderServer)" + "writer.write:" + e.getMessage());
 							e.printStackTrace();
 						}
+						System.out.println("result sending OK.");
 						
 						String responseMessage;
 						int responseLength = reader.readInt();

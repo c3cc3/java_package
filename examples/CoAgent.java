@@ -176,67 +176,70 @@ public class CoAgent {
 
 				// 서버로부터 메시지 길이 및 메시지 읽기
 				int messageLength = in_socket.readInt();
-				if (messageLength > 0) {
-					byte[] receivedData = new byte[messageLength];
-					in_socket.readFully(receivedData, 0, messageLength);
-					String receivedMessage = new String(receivedData);
-					System.out.println("Server response: " + receivedMessage);
+				if (messageLength <= 0) {
+					System.err.println("Header receiving failed: messageLength=" + messageLength);
 				}
-				// json msg parsing
 
-				// 새로운 JSON 생성
-				JSONObject resultJson = new JSONObject();
+				byte[] receivedData = new byte[messageLength];
+				in_socket.readFully(receivedData, 0, messageLength);
+				String receivedMessage = new String(receivedData);
+				System.out.println("Server response: " + receivedMessage);
 
-
-				resultJson.put("HISTORY_KEY", "RANDOM_KEY_0000000");
-				resultJson.put("RESP_KIND", 30);
-				resultJson.put("STATUS_CODE", "1");
-				resultJson.put("RESULT_CODE", "0000");
-				resultJson.put("RCS_MESSAGE", "success");
-
-				String currentDateTime = getCurrentTime(); // 현재 시간을 가져오는 방법이 구현돼 있어야 함
-				resultJson.put("RCS_SND_DTM", currentDateTime);
-				resultJson.put("RCS_RCCP_DTM", currentDateTime);
-				resultJson.put("AGENT_CODE", "MY");
-
-				String jsonString = resultJson.toString();
-				logger.debug("Generated JSON: " + jsonString);
-
+				// 통신사로 부터 받은 메시지를 그데로 결과 큐에 넣는다.
 				try {
-					int write_rc = resultQueue.write( jsonString );
+					while(true) {
+						int write_rc = resultQueue.write( receivedMessage );
 
-					if( write_rc < 0 ) {
-						logger.error("Write failed: " + resultQueue.path + "," + resultQueue.qname + "," + " rc: " + write_rc);
-						resultQueue.close();
-						return;
-					}
-					else if( write_rc == 0 ) { // queue is full
-						logger.info("full: " + resultQueue.path + "," + resultQueue.qname + "," + " rc: " + write_rc);
-						try {
-							Thread.sleep(10); // Pause for 1 second (1000)
+						if( write_rc < 0 ) {
+							logger.error("Write failed: " + resultQueue.path + "," + resultQueue.qname + "," + " rc: " + write_rc);
+							resultQueue.close();
+							return;
 						}
-						catch(InterruptedException ex) {
-							Thread.currentThread().interrupt();
-						}
-						continue;
-					}
-					else {
-						long out_seq = resultQueue.get_out_seq();
-						long out_run_time = resultQueue.get_out_run_time();
-
-						System.out.println("("+threadId+")->receive thread:"+ "enQ success: " + "seq=" + out_seq + "," + "rc:" + write_rc);
-						try {
-							Thread.sleep(100); // Pause for 1 second (1000)
-						}
-						catch(InterruptedException ex) {
+						else if( write_rc == 0 ) { // queue is full
+							logger.info("full: " + resultQueue.path + "," + resultQueue.qname + "," + " rc: " + write_rc);
+							try {
+								Thread.sleep(10); // Pause for 1 second (1000)
+							}
+							catch(InterruptedException ex) {
 								Thread.currentThread().interrupt();
+							}
+							continue;
 						}
-						continue;
+						else {
+							long out_seq = resultQueue.get_out_seq();
+							long out_run_time = resultQueue.get_out_run_time();
+
+							System.out.println("("+threadId+")->receive thread:"+ "enQ success: " + "seq=" + out_seq + "," + "rc:" + write_rc);
+							try {
+								Thread.sleep(100); // Pause for 1 second (1000)
+							}
+							catch(InterruptedException ex) {
+									Thread.currentThread().interrupt();
+							}
+							break;
+						}
 					}
 				} catch (Exception e) {
 					logger.error("("+threadId+")"+ "resultQueue.write() 오류: " + e.getMessage());
 				}
 
+				// 잘받았다는 메시지를 서버에 전송한다.
+
+				JSONObject resultJson = new JSONObject();
+                resultJson.put("RECEIVE_RESULT", "OK");
+				String resultMessage = resultJson.toString();
+				System.out.println("receive result Generated JSON: " + resultMessage);
+				
+				// 메시지를 바이트 배열로 변환 후 길이와 함께 전송
+				try {
+					byte[] resultData = resultMessage.getBytes();
+					out_socket.writeInt( resultData.length ); // 길이 Prefix header 전송
+					out_socket.write( resultData ); // 서버에 메시지 전송
+				} catch( IOException e) {
+					System.err.println("(messageSenderServer)" + "writer.write:" + e.getMessage());
+					e.printStackTrace();
+				}
+				System.out.println("receive result sending OK.");
 			}
 		} catch (IOException e) {
             logger.error("(" + threadId + ")" + "socket:" + e.getMessage());
@@ -437,6 +440,7 @@ public class CoAgent {
 		try {
 			// 길이헤더 수신
 			int responseLength = in_socket.readInt();
+
 			if( responseLength > 0 ) {
 				// 수신 byte[] 버퍼 생성
 				byte[] receiveData = new byte[responseLength];
@@ -481,8 +485,12 @@ public class CoAgent {
 					}
 				}
 			}
+			else {
+				System.err.println("길이 헤더 수신 실패. responseLength=" + responseLength);
+				return false;
+			}
 		} catch( IOException e ) {
-            logger.error("(" + threadId + ")" + "socket.receive and enQ:" + e.getMessage());
+            logger.error("(" + threadId + ")" + "socket.receive and enQ failed.:" + e.getMessage());
 			e.printStackTrace();
 		}
 
