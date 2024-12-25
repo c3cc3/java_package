@@ -86,9 +86,8 @@ public class CoAgent {
 	}
 
 	private static final int THREAD_COUNT = 10;
-	private static final Logger logger = Logger.getLogger(CoAgent.class); // Logger 인스턴스
+	private static final Logger logger = Logger.getLogger(CoAgent.class); // log4j Logger 인스턴스
  
-	// Test Driver
 	public static void main(String[] args) {
 		int rc;
 
@@ -126,30 +125,35 @@ public class CoAgent {
 
 
 		// ExecutorService를 사용하여 스레드 생성
-		ExecutorService resultExecutor = Executors.newFixedThreadPool(1);
+		ExecutorService resultExecutor = Executors.newFixedThreadPool(1); // 1개 스레드
 
-		// 1 개의 결과 수신 스레드 생성
+		// 스레드 ID는 sender 의 최대값+1 을 사용한다.
 		final int receiveThreadId = config.senderThreads+1;
 
-		String resultQueueName = "GW_ONL_HIS";
+		// 스레드 수행
 		resultExecutor.execute(() -> processResultReceiver(receiveThreadId, config.resultQueuePath, config.resultQueueName, config.resultServerIp, config.resultServerPort));
 
 
 		// ExecutorService를 사용하여 스레드 생성
 		ExecutorService executor = Executors.newFixedThreadPool(config.senderThreads + 1);
 
-		// 10개의 발송 스레드 생성
+		// config에 지정된 N 개의 발송 스레드 생성
 		for (int i = 0; i < config.senderThreads; i++) {
 			final int threadId = i;
 			executor.execute(() -> processMessages(config.ackServerIp, config.ackServerPort, threadId, config.deQueuePath, config.deQueueName, config.resultQueuePath, config.resultQueueName, config.userWorkingTimeForSimulate));
 		}
 
-		executor.shutdown();
-		resultExecutor.shutdown();
+		executor.shutdown(); // 스레드 종료
+		resultExecutor.shutdown(); // 스레드 종료
 
 	}
 
-	// 결과 수집 스래드
+	// 결과 수집 스래드: 중계사로 부터 계속해서 결과를 받아 resultQueue 에 넣는 서버
+	// 1. 결과를 넣을 파일큐 오픈
+	// 2. 중계사 연결
+	// 이하 무한 반복(3~4)
+	// 3. 결과 수신
+	// 4. 결과 수집 큐에 enQueue
 	private static void processResultReceiver(int threadId, String qPath, String qName, String resultServerIp, int resultServerPort)  {
 		int rc;
 
@@ -167,23 +171,18 @@ public class CoAgent {
 			logger.info("("+threadId+")"+ "Connected to the echo server." + ", IP=" + resultServerIp + ", PORT=" + resultServerPort );
 
 			while(true) {
-				// 실제로는 이곳에 통신사로 부터 받는 소켓 수신 코드가 들어가야 함.
-				// enQueueData = receiveResult(socket);
-				String enQueueData = null;
-				// 이곳에도 받은 데이터 분실에 대비한 save 루틴이 필요할 수도 있지만
-				// enQ 가 워낙 빠르기 때문에 실제로 불필요 함.
-
 
 				// 서버로부터 메시지 길이 및 메시지 읽기
 				int messageLength = in_socket.readInt();
 				if (messageLength <= 0) {
-					System.err.println("Header receiving failed: messageLength=" + messageLength);
+					logger.error("fatal: socket header receiving failed: messageLength=" + messageLength);
+					System.exit(0);
 				}
 
 				byte[] receivedData = new byte[messageLength];
 				in_socket.readFully(receivedData, 0, messageLength);
 				String receivedMessage = new String(receivedData);
-				System.out.println("Server response: " + receivedMessage);
+				logger.info("Server response: " + receivedMessage);
 
 				// 통신사로 부터 받은 메시지를 그데로 결과 큐에 넣는다.
 				try {
