@@ -43,7 +43,7 @@ import java.time.format.DateTimeFormatter;
 
 // 구성 값을 저장할 클래스를 정의합니다.
 class AgentConfig {
-    String logLevel;
+    int logLevel;
     String logFilePath;
     String resultQueuePath;
     String resultQueueName;
@@ -57,7 +57,7 @@ class AgentConfig {
 	int		resultServerPort;
 
     // 생성자
-    public AgentConfig(String logLevel, String logFilePath, String resultQueuePath, String resultQueueName, String deQueuePath, String deQueueName, int userWorkingTimeForSimulate, int senderThreads, String ackServerIp, int ackServerPort, String resultServerIp, int resultServerPort) {
+    public AgentConfig(int logLevel, String logFilePath, String resultQueuePath, String resultQueueName, String deQueuePath, String deQueueName, int userWorkingTimeForSimulate, int senderThreads, String ackServerIp, int ackServerPort, String resultServerIp, int resultServerPort) {
         this.logLevel = logLevel;
         this.logFilePath = logFilePath;
         this.resultQueuePath = resultQueuePath;
@@ -131,8 +131,7 @@ public class CoAgent {
 		final int receiveThreadId = config.senderThreads+1;
 
 		// 스레드 수행
-		resultExecutor.execute(() -> processResultReceiver(receiveThreadId, config.resultQueuePath, config.resultQueueName, config.resultServerIp, config.resultServerPort));
-
+		resultExecutor.execute(() -> processResultReceiverThread(receiveThreadId, config));
 
 		// ExecutorService를 사용하여 스레드 생성
 		ExecutorService executor = Executors.newFixedThreadPool(config.senderThreads + 1);
@@ -140,7 +139,8 @@ public class CoAgent {
 		// config에 지정된 N 개의 발송 스레드 생성
 		for (int i = 0; i < config.senderThreads; i++) {
 			final int threadId = i;
-			executor.execute(() -> processMessages(config.ackServerIp, config.ackServerPort, threadId, config.deQueuePath, config.deQueueName, config.resultQueuePath, config.resultQueueName, config.userWorkingTimeForSimulate));
+			// executor.execute(() -> processMessageThread(config.ackServerIp, config.ackServerPort, threadId, config.deQueuePath, config.deQueueName, config.resultQueuePath, config.resultQueueName, config.userWorkingTimeForSimulate));
+			executor.execute(() -> processMessageThread(threadId, config));
 		}
 
 		executor.shutdown(); // 스레드 종료
@@ -154,23 +154,23 @@ public class CoAgent {
 	// 이하 무한 반복(3~4)
 	// 3. 결과 수신
 	// 4. 결과 수집 큐에 enQueue
-	private static void processResultReceiver(int threadId, String qPath, String qName, String resultServerIp, int resultServerPort)  {
+	private static void processResultReceiverThread(int threadId, AgentConfig config)  {
 		int rc;
 
-		FileQueueJNI resultQueue = new FileQueueJNI( threadId, "/tmp/result_jni.log", 4, qPath, qName);
+		FileQueueJNI resultQueue = new FileQueueJNI( threadId, config.logFilePath, config.logLevel, config.resultQueuePath, config.resultQueueName);
 		if(  (rc = resultQueue.open()) < 0 ) {
-			System.out.println("open failed: " + "qPath="+qPath + ", qName=" + qName + ", rc=" + rc);
+			logger.error("filequeue open failed: " + "qPath="+ config.resultQueuePath + ", qName=" +  config.resultQueueName + ", rc=" + rc);
 			return;
 		}
 
 		try (
-			Socket socket = new Socket(resultServerIp, resultServerPort);
+			Socket socket = new Socket(config.resultServerIp, config.resultServerPort);
 			DataOutputStream out_socket = new DataOutputStream(socket.getOutputStream());
 			DataInputStream in_socket = new DataInputStream(socket.getInputStream()) )  
 		{
-			logger.info("("+threadId+")"+ "Connected to the echo server." + ", IP=" + resultServerIp + ", PORT=" + resultServerPort );
+			logger.info("("+threadId+")"+ "Connected to the echo server." + ", IP=" + config.resultServerIp + ", PORT=" + config.resultServerPort );
 
-			while(true) {
+			while(true) { // 큐가 full 될 경우를 대비해서 메시지 전송이 성공할 때까지 무한반복
 
 				// 서버로부터 메시지 길이 및 메시지 읽기
 				int messageLength = in_socket.readInt();
@@ -222,8 +222,7 @@ public class CoAgent {
 					logger.error("("+threadId+")"+ "resultQueue.write() 오류: " + e.getMessage());
 				}
 
-				// 잘받았다는 메시지를 서버에 전송한다.
-
+				// 잘받았다는 메시지를 보내기 위한 RECEIVE_RESULT json String 을 만든다.
 				JSONObject resultJson = new JSONObject();
                 resultJson.put("RECEIVE_RESULT", "OK");
 				String resultMessage = resultJson.toString();
@@ -239,7 +238,7 @@ public class CoAgent {
 					e.printStackTrace();
 				}
 				System.out.println("receive result sending OK.");
-			}
+			} // while(true)
 		} catch (IOException e) {
             logger.error("(" + threadId + ")" + "socket:" + e.getMessage());
 			e.printStackTrace();
@@ -259,32 +258,32 @@ public class CoAgent {
 	//		writeFQ(jsonAckMessage); // enQ ack
 	//	}
 	/////////////////////////////////////////////////////////////////////////
-	private static void processMessages( String serverIp, int serverPort, int threadId, String qPath, String qName, String ackQueuePath, String ackQueueName, int userWorkingTimeForSimulate) {
+	private static void processMessageThread( int threadId, AgentConfig config) {
 		int rc;
 
 
 		// make a FileQueueJNI instance with naming test.
 		// 3-th argument is loglevel. (0: trace, 1: debug, 2: info, 3: Warning, 4: error, 5: emerg, 6: request)
 		// Use 1 in dev and 4 prod.
-
-		FileQueueJNI requestQueue = new FileQueueJNI( threadId, "/tmp/sender_jni.log", 4, qPath, qName);
+		FileQueueJNI requestQueue = new FileQueueJNI( threadId, config.logFilePath, config.logLevel, config.deQueuePath, config.deQueueName);
 		if(  (rc = requestQueue.open()) < 0 ) {
-			logger.error("("+threadId+")"+ "open failed: " + "qPath="+qPath + ", qName=" + qName + ", rc=" + rc);
+			logger.error("("+threadId+")"+ "open failed: " + "qPath="+ config.deQueuePath + ", qName=" + config.deQueueName + ", rc=" + rc);
 			return;
 		}
 
-		FileQueueJNI ackQueue = new FileQueueJNI( threadId+20, "/tmp/sender_ack_jni.log", 4, ackQueuePath , ackQueueName);
+		// We use threadID + 20 : Max threads is 20
+		FileQueueJNI ackQueue = new FileQueueJNI( threadId+20, config.logFilePath, config.logLevel, config.resultQueuePath , config.resultQueueName);
 		if(  (rc = ackQueue.open()) < 0 ) {
-			logger.error("("+threadId+")"+ "open failed: " + " ackQueuePath="+ ackQueuePath + ", ackQueueName=" + ackQueueName + ", rc=" + rc);
+			logger.error("("+threadId+")"+ "open failed: " + " ackQueuePath="+ config.resultQueuePath + ", ackQueueName=" + config.resultQueueName + ", rc=" + rc);
 			return;
 		}
 
 		try (
-			Socket socket = new Socket(serverIp, serverPort);
+			Socket socket = new Socket(config.ackServerIp, config.ackServerPort);
 			DataOutputStream out_socket = new DataOutputStream(socket.getOutputStream());
 			DataInputStream in_socket = new DataInputStream(socket.getInputStream()) )  
 		{
-			logger.info("("+threadId+")"+ "Connected to the echo server." + ", IP=" + serverIp + ", PORT=" + serverPort );
+			logger.info("("+threadId+")"+ "Connected to the echo server." + ", IP=" + config.ackServerIp + ", PORT=" + config.ackServerPort );
 
 			// 비정상 종료시 미처리로 남아있던 파일을 처리한다.( 미리 커밋을 했을 경우, 메시지 누락 방지 )
 			// recovery 
@@ -341,11 +340,6 @@ public class CoAgent {
 					// 
 					///////////////////////////////////////////////////////////// 
 
-/*
-					if( userWorkingTimeForSimulate > 0 ) {
-						Thread.sleep(userWorkingTimeForSimulate); // Pause for 1 second
-					}
-*/
 					if( your_job_result == true) { // normal data
 						deleteFile(threadId); // 파일 삭제
 						logger.debug("("+threadId+")"+ "deleteFile() sucesss seq : " + out_seq);
@@ -537,7 +531,10 @@ public class CoAgent {
             doc.getDocumentElement().normalize();
 
             // 각 설정 값을 읽어옵니다.
-            String logLevel = doc.getElementsByTagName("logLevel").item(0).getTextContent();
+            String logLevel_str = doc.getElementsByTagName("logLevel").item(0).getTextContent();
+			int logLevel = Integer.parseInt(logLevel_str); 
+
+
             String logFilePath = doc.getElementsByTagName("logFilePath").item(0).getTextContent();
             String resultQueuePath = doc.getElementsByTagName("resultQueuePath").item(0).getTextContent();
             String resultQueueName = doc.getElementsByTagName("resultQueueName").item(0).getTextContent();
