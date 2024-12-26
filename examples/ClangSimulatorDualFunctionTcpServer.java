@@ -32,6 +32,10 @@ import java.util.Map; // mapper
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+// threadIndex Manager
+// Alternately, Java 8부터 지원하는 방식으로 AtomicInteger를 사용
+import java.util.concurrent.atomic.AtomicInteger;
+
 
 // 구성 값을 저장할 클래스를 정의합니다.
 class Config {
@@ -58,7 +62,6 @@ class Config {
 
 // 통신사 Simulator TCP Server
 public class ClangSimulatorDualFunctionTcpServer {
-
     public static void main(String[] args) {
 
 		System.out.println("args.length=" + args.length);
@@ -92,41 +95,48 @@ public class ClangSimulatorDualFunctionTcpServer {
 			scanner.close();
         }
 
-
-        Thread receiveRequestServerThread = new Thread(() -> receiveRequestServer(config));
-        Thread messageServerThread = new Thread(() -> startMessageSenderServer(config));
-
-        receiveRequestServerThread.start();
-        messageServerThread.start();
-    }
-
-    // 발송요청을 받아 큐에 넣고 ACK를 답하는 서버
-    public static void receiveRequestServer(Config config) {
 		// File Queue Open
-		// 
 		int rc;
 		int queueIndex = 0;
+
+		// 이 값은 소켓에서 exception이 발생되어 ackThread 가 종료되었을 때, resultThread 도 
+		// 같이 종료하기 위함이다.
+		AtomicInteger stopFlag = new AtomicInteger(0);
+
 		FileQueueJNI interThreadComQueue = new FileQueueJNI( queueIndex, "/tmp/receiveRequestServer.log", 4, config.interThreadComQueuePath, config.interThreadComQueueName);
+
 		if(  (rc = interThreadComQueue.open()) < 0 ) {
 			System.out.println("open failed: " + "qPath="+ config.interThreadComQueuePath + ", qName=" + config.interThreadComQueueName + ", rc=" + rc);
 			return;
 		}
 
-        try (ServerSocket serverSocket = new ServerSocket(config.ackPort)) {
-            System.out.println("Receive Request Server listening on port " + config.ackPort);
-            System.out.println("interThreadComQueue info:" + config.interThreadComQueuePath + ", " +config.interThreadComQueueName);
+        Thread requestDeliveryServerThread = new Thread(() -> requestDeliveryListenServer(stopFlag, config, interThreadComQueue));
+        Thread resultReturnServerThread = new Thread(() -> resultReturnListenServer(stopFlag, config, interThreadComQueue));
 
-            while (true) {
-                Socket clientSocket = serverSocket.accept();
-                new Thread(() -> handleAckClient(clientSocket, interThreadComQueue)).start();
-            }
-        } catch (IOException e) {
-            System.err.println("Could not listen on port " + config.ackPort);
-            e.printStackTrace();
-        }
+        requestDeliveryServerThread.start();
+        resultReturnServerThread.start();
     }
 
-    public static void handleAckClient(Socket clientSocket, FileQueueJNI interThreadComQueue) {
+    // 발송요청을 받아 큐에 넣고 ACK를 답하는 서버
+    public static void requestDeliveryListenServer(AtomicInteger stopFlag, Config config, FileQueueJNI interThreadComQueue) {
+		try (ServerSocket serverSocket = new ServerSocket(config.ackPort)) {
+			System.out.println("Receive Request Server listening on port " + config.ackPort);
+			System.out.println("interThreadComQueue info:" + config.interThreadComQueuePath + ", " +config.interThreadComQueueName);
+
+
+			// 클라이언트 연결을 기다리며 무한 루프
+			while (true) {
+				Socket clientSocket = serverSocket.accept(); // 클라이언트 연결 수락
+				new Thread(() -> handleAckClientThread(stopFlag, clientSocket, config, interThreadComQueue)).start();
+			}
+		} catch (IOException e) {
+			System.err.println("Could not listen on port " + config.ackPort);
+			e.printStackTrace();
+		}
+    }
+
+    public static void handleAckClientThread(AtomicInteger stopFlag, Socket clientSocket, Config config, FileQueueJNI interThreadComQueue) {
+
         try (
             DataInputStream reader = new DataInputStream(clientSocket.getInputStream());
             DataOutputStream writer = new DataOutputStream(clientSocket.getOutputStream());
@@ -151,7 +161,7 @@ public class ClangSimulatorDualFunctionTcpServer {
 
 						if( write_rc < 0 ) {
 							System.err.println("Write failed: " + interThreadComQueue.path + "," + interThreadComQueue.qname + "," + " rc: " + write_rc);
-							interThreadComQueue.close();
+							// interThreadComQueue.close();
 							return;
 						}
 						else if( write_rc == 0 ) { // queue is full
@@ -218,6 +228,9 @@ public class ClangSimulatorDualFunctionTcpServer {
 				} catch( IOException e) {
 					System.err.println("(receiveRequestServer)" + "writer.write:" + e.getMessage());
 					e.printStackTrace();
+
+					// resultThread 를 종료시키기 위해 사용된다.
+					stopFlag.getAndIncrement(); 
 				}
 			}
         } catch (IOException e) {
@@ -228,28 +241,19 @@ public class ClangSimulatorDualFunctionTcpServer {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            System.out.println("receiveRequestServer connection closed.");
-			System.exit(0);
+            System.out.println("finally: receiveRequestServer connection closed.");
         }
     }
 
     // 메시지를 먼저 보내고 응답을 받는 서버
-    public static void startMessageSenderServer(Config config) {
-		// File Queue Open
-		int rc;
-		int queueIndex = 1;
-		FileQueueJNI interThreadComQueue = new FileQueueJNI( queueIndex, "/tmp/resultServer.log", 4, config.interThreadComQueuePath, config.interThreadComQueueName);
-		if(  (rc = interThreadComQueue.open()) < 0 ) {
-			System.out.println("open failed: " + "qPath="+ config.interThreadComQueuePath + ", qName=" + config.interThreadComQueueName + ", rc=" + rc);
-			return;
-		}
+    public static void resultReturnListenServer(AtomicInteger stopFlag, Config config, FileQueueJNI interThreadComQueue) {
 
         try (ServerSocket serverSocket = new ServerSocket(config.resultPort)) {
             System.out.println("Message Sender Server listening on port " + config.resultPort);
             System.out.println("interThreadComQueue info:" + config.interThreadComQueuePath + ", " +config.interThreadComQueueName);
             while (true) {
                 Socket clientSocket = serverSocket.accept();
-                new Thread(() -> handleMessageClient(clientSocket, interThreadComQueue)).start();
+                new Thread(() -> handleMessageClient(stopFlag, clientSocket, interThreadComQueue)).start();
             }
         } catch (IOException e) {
             System.err.println("Could not listen on port " + config.resultPort);
@@ -261,7 +265,7 @@ public class ClangSimulatorDualFunctionTcpServer {
 	// 2. json 에서 history_key를 꺼낸다.
 	// 3. Make a new resultJson message.
 	// 4. 고객 수신여부의 resultJson을 Agent 소켓에 전송
-    public static void handleMessageClient(Socket clientSocket, FileQueueJNI interThreadComQueue) {
+    public static void handleMessageClient(AtomicInteger stopFlag, Socket clientSocket, FileQueueJNI interThreadComQueue) {
 		long threadId = Thread.currentThread().getId();
         try (
             DataInputStream reader = new DataInputStream(clientSocket.getInputStream());
@@ -274,6 +278,13 @@ public class ClangSimulatorDualFunctionTcpServer {
 				while (true) {
 					int read_rc = 0;
 
+					// ackThread 가 종료되어 stop 요구를 하였는지 체크한다.
+					int currentStopFlag = stopFlag.get();
+					if( currentStopFlag > 0 ) {
+						System.out.println("I will stop by stopFlag(" + currentStopFlag + ")");
+						return;
+					}
+				
 					read_rc = interThreadComQueue.readXA(); // XA read 
 					if( read_rc < 0 ) {
 						System.err.println("("+threadId+")"+ "readXA failed: " + interThreadComQueue.path + "," + interThreadComQueue.qname + "," + " rc: " + read_rc);
@@ -330,7 +341,9 @@ public class ClangSimulatorDualFunctionTcpServer {
 						} catch( IOException e) {
 							System.err.println("(messageSenderServer)" + "writer.write:" + e.getMessage());
 							e.printStackTrace();
+							return;
 						}
+	
 						System.out.println("result sending OK.");
 						
 						String responseMessage;
@@ -370,7 +383,7 @@ public class ClangSimulatorDualFunctionTcpServer {
 				System.err.println("Thread " + threadId + " interrupted.");
 				
 			} finally {
-				interThreadComQueue.close();
+				// interThreadComQueue.close();
 			}
 
 
@@ -382,7 +395,10 @@ public class ClangSimulatorDualFunctionTcpServer {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            System.out.println("Message sender connection closed.");
+            System.out.println("handleMessageClient() socket connection closed.");
+
+			stopFlag.set(0); // atomicInteger  값을 초기화
+			// System.exit(0);
         }
     }
 

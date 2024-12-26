@@ -89,6 +89,11 @@ class ClientHandler extends Thread {
 
     @Override
     public void run() {
+		// 현재 스레드 얻기
+        Thread currentThread = Thread.currentThread();
+        // 스레드 ID 출력
+        System.out.println("Current Thread ID: " + currentThread.getId());
+
         try (DataInputStream in = new DataInputStream(socket.getInputStream());
              DataOutputStream out = new DataOutputStream(socket.getOutputStream())) {
 
@@ -108,12 +113,33 @@ class ClientHandler extends Thread {
 				
 
                 // 클라이언트로 에코 응답 전송
-                out.writeInt(length);
-                out.write(data);
+				byte[] sendData = message.getBytes();
+				out.writeInt(sendData.length);
+				out.write(sendData);
+
+/*
+                int dataLength = sendData.length;
+
+                // 길이(int)를 바이트 배열로 변환
+                byte[] lengthBytes = new byte[4];
+                lengthBytes[0] = (byte) (dataLength >>> 24); // 최상위 바이트
+                lengthBytes[1] = (byte) (dataLength >>> 16);
+                lengthBytes[2] = (byte) (dataLength >>> 8);
+                lengthBytes[3] = (byte) dataLength; // 최하위 바이트
+
+                // 길이와 본문을 결합한 새로운 배열 생성
+                byte[] send_message = new byte[4 + sendData.length]; // 4바이트 길이 + 메시지 본문 길이
+                System.arraycopy(lengthBytes, 0, send_message, 0, 4); // 길이 복사
+                System.arraycopy(sendData, 0, send_message, 4, data.length); // 본문 복사
+
+                out.write(send_message);
+*/
             }
         } catch (IOException e) {
+            System.out.println("IOException");
             e.printStackTrace();
         } finally {
+            System.out.println("finally");
             try {
                 socket.close(); // 소켓 닫기
             } catch (IOException e) {
