@@ -41,6 +41,10 @@ import org.apache.log4j.Logger; // Log4j import
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+// threadIndex Manager
+// Alternately, Java 8부터 지원하는 방식으로 AtomicInteger를 사용
+import java.util.concurrent.atomic.AtomicInteger;
+
 // 구성 값을 저장할 클래스를 정의합니다.
 class AgentConfig {
     int logLevel;
@@ -123,6 +127,9 @@ public class CoAgent {
 			scanner.close();
         }
 
+		// 이 값은 소켓에서 exception이 발생되어 어떤 Thread 가 종료되었을 때, 나머지 Thread 도 
+        // 같이 종료하기 위함이다.
+        AtomicInteger stopFlag = new AtomicInteger(0);
 
 		// ExecutorService를 사용하여 스레드 생성
 		ExecutorService resultExecutor = Executors.newFixedThreadPool(1); // 1개 스레드
@@ -131,7 +138,7 @@ public class CoAgent {
 		final int receiveThreadId = config.senderThreads+1;
 
 		// 스레드 수행
-		resultExecutor.execute(() -> processResultReceiverThread(receiveThreadId, config));
+		resultExecutor.execute(() -> processResultReceiverThread(stopFlag, receiveThreadId, config));
 
 		// ExecutorService를 사용하여 스레드 생성
 		ExecutorService executor = Executors.newFixedThreadPool(config.senderThreads + 1);
@@ -139,8 +146,7 @@ public class CoAgent {
 		// config에 지정된 N 개의 발송 스레드 생성
 		for (int i = 0; i < config.senderThreads; i++) {
 			final int threadId = i;
-			// executor.execute(() -> processMessageThread(config.ackServerIp, config.ackServerPort, threadId, config.deQueuePath, config.deQueueName, config.resultQueuePath, config.resultQueueName, config.userWorkingTimeForSimulate));
-			executor.execute(() -> processMessageThread(threadId, config));
+			executor.execute(() -> processMessageThread(stopFlag, threadId, config));
 		}
 
 		executor.shutdown(); // 스레드 종료
@@ -154,7 +160,7 @@ public class CoAgent {
 	// 이하 무한 반복(3~4)
 	// 3. 결과 수신
 	// 4. 결과 수집 큐에 enQueue
-	private static void processResultReceiverThread(int threadId, AgentConfig config)  {
+	private static void processResultReceiverThread(AtomicInteger stopFlag, int threadId, AgentConfig config)  {
 
 
 		while(true) { // 소켓 통신 무한반복
@@ -166,6 +172,11 @@ public class CoAgent {
 				return;
 			}
 
+			int currentStopFlag = stopFlag.get();
+			if( currentStopFlag >= config.senderThreads ) { // 
+				stopFlag.set(0); // atomicInteger  값을 초기화
+			}
+
 			try (
 				Socket socket = new Socket(config.resultServerIp, config.resultServerPort);
 				DataOutputStream out_socket = new DataOutputStream(socket.getOutputStream());
@@ -174,7 +185,13 @@ public class CoAgent {
 				logger.info("("+threadId+")"+ "Connected to the echo server." + ", IP=" + config.resultServerIp + ", PORT=" + config.resultServerPort );
 
 				while(true) { // 큐가 full 될 경우를 대비해서 메시지 전송이 성공할 때까지 무한반복
-
+					// ackThread 가 종료되어 stop 요구를 하였는지 체크한다.
+					int currStopFlag = stopFlag.get();
+					if( currStopFlag > 0 ) {
+						System.out.println("I will stop by stopFlag(" + currStopFlag + ")");
+						return;
+					}
+					
 					// 서버로부터 메시지 길이 및 메시지 읽기
 					int messageLength = in_socket.readInt();
 					if (messageLength <= 0) {
@@ -258,6 +275,9 @@ public class CoAgent {
 				catch(InterruptedException ex) {
 						Thread.currentThread().interrupt();
 				}
+			} finally {
+				// resultThread 를 종료시키기 위해 사용된다.
+                stopFlag.getAndIncrement();
 			}
 		} // while(true) socket
 	}
@@ -274,7 +294,7 @@ public class CoAgent {
 	//		writeFQ(jsonAckMessage); // enQ ack
 	//	}
 	/////////////////////////////////////////////////////////////////////////
-	private static void processMessageThread( int threadId, AgentConfig config) {
+	private static void processMessageThread( AtomicInteger stopFlag,  int threadId, AgentConfig config) {
 		int rc;
 
 		while(true) {
@@ -285,6 +305,11 @@ public class CoAgent {
 			if(  (rc = requestQueue.open()) < 0 ) {
 				logger.error("("+threadId+")"+ "open failed: " + "qPath="+ config.deQueuePath + ", qName=" + config.deQueueName + ", rc=" + rc);
 				return;
+			}
+
+			int currentStopFlag = stopFlag.get();
+			if( currentStopFlag >= config.senderThreads ) { // 
+				stopFlag.set(0); // atomicInteger  값을 초기화
 			}
 
 			// We use threadID + 20 : Max threads is 20
@@ -325,6 +350,13 @@ public class CoAgent {
 					// 무한반복 ( daemon )
 					while (true) {
 						int read_rc = 0;
+
+						// ackThread 가 종료되어 stop 요구를 하였는지 체크한다.
+						int currStopFlag = stopFlag.get();
+						if( currStopFlag > 0 ) {
+							System.out.println("I will stop by stopFlag(" + currStopFlag + ")");
+							return;
+						}
 
 						read_rc = requestQueue.readXA(); // XA read 
 						if( read_rc < 0 ) {
@@ -396,6 +428,8 @@ public class CoAgent {
 				}
 				*/
 				logger.error("(" + threadId + ")" + "socket finallly.");
+				// resultThread 를 종료시키기 위해 사용된다.
+                stopFlag.getAndIncrement();
 			}
 		} // while(true) : 소켓통신 무한반복
 	} 
