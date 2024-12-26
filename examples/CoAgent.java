@@ -155,15 +155,17 @@ public class CoAgent {
 	// 3. 결과 수신
 	// 4. 결과 수집 큐에 enQueue
 	private static void processResultReceiverThread(int threadId, AgentConfig config)  {
-		int rc;
 
-		FileQueueJNI resultQueue = new FileQueueJNI( threadId, config.logFilePath, config.logLevel, config.resultQueuePath, config.resultQueueName);
-		if(  (rc = resultQueue.open()) < 0 ) {
-			logger.error("filequeue open failed: " + "qPath="+ config.resultQueuePath + ", qName=" +  config.resultQueueName + ", rc=" + rc);
-			return;
-		}
 
 		while(true) { // 소켓 통신 무한반복
+			int rc;
+
+			FileQueueJNI resultQueue = new FileQueueJNI( threadId, config.logFilePath, config.logLevel, config.resultQueuePath, config.resultQueueName);
+			if(  (rc = resultQueue.open()) < 0 ) {
+				logger.error("filequeue open failed: " + "qPath="+ config.resultQueuePath + ", qName=" +  config.resultQueueName + ", rc=" + rc);
+				return;
+			}
+
 			try (
 				Socket socket = new Socket(config.resultServerIp, config.resultServerPort);
 				DataOutputStream out_socket = new DataOutputStream(socket.getOutputStream());
@@ -221,6 +223,9 @@ public class CoAgent {
 						}
 					} catch (Exception e) {
 						logger.error("("+threadId+")"+ "resultQueue.write() 오류: " + e.getMessage());
+
+					} finally {
+						logger.info("("+threadId+")"+ "resultQueue.write() finally.");
 					}
 
 					// 잘받았다는 메시지를 보내기 위한 RECEIVE_RESULT json String 을 만든다.
@@ -241,6 +246,9 @@ public class CoAgent {
 					System.out.println("receive result sending OK.");
 				} // while(true)
 			} catch (IOException e) {
+				// 큐를 닫는다.
+				resultQueue.close();
+
 				logger.error("(" + threadId + ")" + "socket exception:" + e.getMessage());
 				e.printStackTrace();
 				try {
@@ -267,24 +275,6 @@ public class CoAgent {
 	/////////////////////////////////////////////////////////////////////////
 	private static void processMessageThread( int threadId, AgentConfig config) {
 		int rc;
-
-/*
-		// make a FileQueueJNI instance with naming test.
-		// 3-th argument is loglevel. (0: trace, 1: debug, 2: info, 3: Warning, 4: error, 5: emerg, 6: request)
-		// Use 1 in dev and 4 prod.
-		FileQueueJNI requestQueue = new FileQueueJNI( threadId, config.logFilePath, config.logLevel, config.deQueuePath, config.deQueueName);
-		if(  (rc = requestQueue.open()) < 0 ) {
-			logger.error("("+threadId+")"+ "open failed: " + "qPath="+ config.deQueuePath + ", qName=" + config.deQueueName + ", rc=" + rc);
-			return;
-		}
-
-		// We use threadID + 20 : Max threads is 20
-		FileQueueJNI ackQueue = new FileQueueJNI( threadId+20, config.logFilePath, config.logLevel, config.resultQueuePath , config.resultQueueName);
-		if(  (rc = ackQueue.open()) < 0 ) {
-			logger.error("("+threadId+")"+ "open failed: " + " ackQueuePath="+ config.resultQueuePath + ", ackQueueName=" + config.resultQueueName + ", rc=" + rc);
-			return;
-		}
-*/
 
 		while(true) {
 			// make a FileQueueJNI instance with naming test.
