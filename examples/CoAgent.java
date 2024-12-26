@@ -183,9 +183,9 @@ public class CoAgent {
 					}
 
 					byte[] receivedData = new byte[messageLength];
-					in_socket.readFully(receivedData, 0, messageLength);
+					in_socket.readFully(receivedData, 0, messageLength); // 메지시 길이만클 받는다.
 					String receivedMessage = new String(receivedData);
-					logger.info("Server response: " + receivedMessage);
+					logger.info("("+threadId+")" + "Server response: " + receivedMessage);
 
 					// 통신사로 부터 받은 메시지를 그데로 결과 큐에 넣는다.
 					try {
@@ -193,12 +193,13 @@ public class CoAgent {
 							int write_rc = resultQueue.write( receivedMessage );
 
 							if( write_rc < 0 ) {
-								logger.error("Write failed: " + resultQueue.path + "," + resultQueue.qname + "," + " rc: " + write_rc);
+								logger.error("("+threadId+")"+ "Write failed: " + resultQueue.path + "," + resultQueue.qname + "," + " rc: " + write_rc);
+								logger.error("("+threadId+")"+ "Fatal error: I will stop processingg. Good bye!");
 								resultQueue.close();
-								return;
+								System.exit(0);
 							}
 							else if( write_rc == 0 ) { // queue is full
-								logger.info("full: " + resultQueue.path + "," + resultQueue.qname + "," + " rc: " + write_rc);
+								logger.info("("+threadId+")"+ "full: " + resultQueue.path + "," + resultQueue.qname + "," + " rc: " + write_rc);
 								try {
 									Thread.sleep(10); // Pause for 1 second (1000)
 								}
@@ -211,7 +212,7 @@ public class CoAgent {
 								long out_seq = resultQueue.get_out_seq();
 								long out_run_time = resultQueue.get_out_run_time();
 
-								System.out.println("("+threadId+")->receive thread:"+ "enQ success: " + "seq=" + out_seq + "," + "rc:" + write_rc);
+								logger.info("("+threadId+")"+ "enQ success(" + resultQueue.path + "," + resultQueue.qname + "), " + "seq=" + out_seq + "," + "rc:" + write_rc);
 								try {
 									Thread.sleep(100); // Pause for 1 second (1000)
 								}
@@ -232,18 +233,18 @@ public class CoAgent {
 					JSONObject resultJson = new JSONObject();
 					resultJson.put("RECEIVE_RESULT", "OK");
 					String resultMessage = resultJson.toString();
-					System.out.println("receive result Generated JSON: " + resultMessage);
+					logger.info("("+threadId+")" + "Generate a JSON message for confirming." + resultMessage);
 					
 					// 메시지를 바이트 배열로 변환 후 길이와 함께 전송
 					try {
 						byte[] resultData = resultMessage.getBytes();
 						out_socket.writeInt( resultData.length ); // 길이 Prefix header 전송
 						out_socket.write( resultData ); // 서버에 메시지 전송
+						logger.info("("+threadId+")"+ "The client sends a response confirming that it has successfully received the result message from the server.");
 					} catch( IOException e) {
-						System.err.println("(messageSenderServer)" + "writer.write:" + e.getMessage());
+						System.err.println("("+threadId+")"+ "(messageSenderServer)" + "writer.write:" + e.getMessage());
 						e.printStackTrace();
 					}
-					System.out.println("receive result sending OK.");
 				} // while(true)
 			} catch (IOException e) {
 				// 큐를 닫는다.
@@ -449,8 +450,7 @@ public class CoAgent {
 			return true;
 		}
 
-	    logger.debug("(" + threadId + ")" + "data read success:" + " rc: " + rc + " msg: " + jsonMessage + " seq: " + out_seq + " run_time(micro seconds): " + out_run_time);
-
+	    logger.debug("(" + threadId + ")" + "JsonParserAndVerify() OK:" + " rc: " + rc + " msg: " + jsonMessage + " seq: " + out_seq + " run_time(micro seconds): " + out_run_time);
 
 		// 메시지를 바이트 배열로 변환 후 길이와 함께 전송
 		try {
@@ -461,8 +461,7 @@ public class CoAgent {
             logger.error("(" + threadId + ")" + "socket.write:" + e.getMessage());
 			e.printStackTrace();
 		}
-
-		logger.info("(" + threadId + ")" + "data send success.");
+		logger.info("(" + threadId + ")" + "I successfully delivered the data retrieved(dequeue) from the queue to the carrier.");
 
 		// We receive ACK from server.
 		try {
@@ -476,7 +475,7 @@ public class CoAgent {
 				in_socket.readFully( receiveData, 0, responseLength);
 
 				String serverResponse = new String(receiveData);
-				logger.info("("+threadId+")" + "received server response(ACK): " + serverResponse);
+				logger.info("("+threadId+")" + "I successfully received the ACK message from the server.(" + serverResponse + ")");
 
 				// ACK 메시지를 ackQueue 에 넣는다.
 				while(true) {
@@ -502,7 +501,7 @@ public class CoAgent {
 						long writeOutSeq = ackQueue.get_out_seq();
 						long writeRunTime = ackQueue.get_out_run_time();
 
-						logger.info("("+threadId+")"+ "enQ(ACK) success: " + "seq=" + writeOutSeq + "," + "rc:" + write_rc);
+						logger.info("("+threadId+")"+ "enQ(ACK) success(" + ackQueue.path + "," + ackQueue.qname + "), " + "seq=" + writeOutSeq + "," + "rc:" + write_rc);
 						try {
 							Thread.sleep(100); // Pause for 1 second (1000)
 						}
@@ -663,29 +662,29 @@ public class CoAgent {
                 // String city = jsonNode.get("city").asText();
 				// boolean isActive = jsonNode.get("isActive").asBoolean();
 
-            	System.out.println("-------------------------- JSON Check OK ------------------------");
-            	System.out.println("\t-(" + threadId + ")" + "SEQ: " + seq);
-            	System.out.println("\t-(" + threadId + ")" + "CHANNEL: " + channel);
-            	System.out.println("\t-(" + threadId + ")" + "MSG_TYPE: " + msgType);
-            	System.out.println("\t-(" + threadId + ")" + "RECEIVER: " + receiver);
-            	System.out.println("\t-(" + threadId + ")" + "SENDER: " + sender);
-            	System.out.println("\t-(" + threadId + ")" + "BRAND_ID: " + brandId);
-            	System.out.println("\t-(" + threadId + ")" + "BRAND_KEY: " + brandKey);
-            	System.out.println("\t-(" + threadId + ")" + "MESSAGEBASE_ID: " + messageBaseId);
-            	System.out.println("\t-(" + threadId + ")" + "MESSAGE: " + message);
+            	logger.debug("-------------------------- JSON Check OK ------------------------");
+            	logger.debug("\t-(" + threadId + ")" + "SEQ: " + seq);
+            	logger.debug("\t-(" + threadId + ")" + "CHANNEL: " + channel);
+            	logger.debug("\t-(" + threadId + ")" + "MSG_TYPE: " + msgType);
+            	logger.debug("\t-(" + threadId + ")" + "RECEIVER: " + receiver);
+            	logger.debug("\t-(" + threadId + ")" + "SENDER: " + sender);
+            	logger.debug("\t-(" + threadId + ")" + "BRAND_ID: " + brandId);
+            	logger.debug("\t-(" + threadId + ")" + "BRAND_KEY: " + brandKey);
+            	logger.debug("\t-(" + threadId + ")" + "MESSAGEBASE_ID: " + messageBaseId);
+            	logger.debug("\t-(" + threadId + ")" + "MESSAGE: " + message);
 
 				if (channel.equalsIgnoreCase("HC")) { // is health checking.
 					hcFlag = true;
 				}
 				return true;
             } else {
-            	System.out.println("--------------------------JSON Check ERROR------------------------");
+            	logger.debug("--------------------------JSON Check ERROR------------------------");
             	logger.error("(" + threadId + ")" + "Invalid JSON: missing required fields");
 				return false;
             }
         } catch (Exception e) {
             // JSON 파싱 중 예외가 발생했을 경우
-            System.err.println("Error verifying or parsing JSON: " + e.getMessage());
+            logger.error( "(" + threadId + ")" + "Error verifying or parsing JSON: " + e.getMessage());
 			return false;
         }
     }
