@@ -163,87 +163,94 @@ public class CoAgent {
 			return;
 		}
 
-		try (
-			Socket socket = new Socket(config.resultServerIp, config.resultServerPort);
-			DataOutputStream out_socket = new DataOutputStream(socket.getOutputStream());
-			DataInputStream in_socket = new DataInputStream(socket.getInputStream()) )  
-		{
-			logger.info("("+threadId+")"+ "Connected to the echo server." + ", IP=" + config.resultServerIp + ", PORT=" + config.resultServerPort );
+		while(true) { // 소켓 통신 무한반복
+			try (
+				Socket socket = new Socket(config.resultServerIp, config.resultServerPort);
+				DataOutputStream out_socket = new DataOutputStream(socket.getOutputStream());
+				DataInputStream in_socket = new DataInputStream(socket.getInputStream()) )  
+			{
+				logger.info("("+threadId+")"+ "Connected to the echo server." + ", IP=" + config.resultServerIp + ", PORT=" + config.resultServerPort );
 
-			while(true) { // 큐가 full 될 경우를 대비해서 메시지 전송이 성공할 때까지 무한반복
+				while(true) { // 큐가 full 될 경우를 대비해서 메시지 전송이 성공할 때까지 무한반복
 
-				// 서버로부터 메시지 길이 및 메시지 읽기
-				int messageLength = in_socket.readInt();
-				if (messageLength <= 0) {
-					logger.error("fatal: socket header receiving failed: messageLength=" + messageLength);
-					System.exit(0);
-				}
-
-				byte[] receivedData = new byte[messageLength];
-				in_socket.readFully(receivedData, 0, messageLength);
-				String receivedMessage = new String(receivedData);
-				logger.info("Server response: " + receivedMessage);
-
-				// 통신사로 부터 받은 메시지를 그데로 결과 큐에 넣는다.
-				try {
-					while(true) {
-						int write_rc = resultQueue.write( receivedMessage );
-
-						if( write_rc < 0 ) {
-							logger.error("Write failed: " + resultQueue.path + "," + resultQueue.qname + "," + " rc: " + write_rc);
-							resultQueue.close();
-							return;
-						}
-						else if( write_rc == 0 ) { // queue is full
-							logger.info("full: " + resultQueue.path + "," + resultQueue.qname + "," + " rc: " + write_rc);
-							try {
-								Thread.sleep(10); // Pause for 1 second (1000)
-							}
-							catch(InterruptedException ex) {
-								Thread.currentThread().interrupt();
-							}
-							continue;
-						}
-						else {
-							long out_seq = resultQueue.get_out_seq();
-							long out_run_time = resultQueue.get_out_run_time();
-
-							System.out.println("("+threadId+")->receive thread:"+ "enQ success: " + "seq=" + out_seq + "," + "rc:" + write_rc);
-							try {
-								Thread.sleep(100); // Pause for 1 second (1000)
-							}
-							catch(InterruptedException ex) {
-									Thread.currentThread().interrupt();
-							}
-							break;
-						}
+					// 서버로부터 메시지 길이 및 메시지 읽기
+					int messageLength = in_socket.readInt();
+					if (messageLength <= 0) {
+						logger.error("fatal: socket header receiving failed: messageLength=" + messageLength);
+						System.exit(0);
 					}
-				} catch (Exception e) {
-					logger.error("("+threadId+")"+ "resultQueue.write() 오류: " + e.getMessage());
-				}
 
-				// 잘받았다는 메시지를 보내기 위한 RECEIVE_RESULT json String 을 만든다.
-				JSONObject resultJson = new JSONObject();
-                resultJson.put("RECEIVE_RESULT", "OK");
-				String resultMessage = resultJson.toString();
-				System.out.println("receive result Generated JSON: " + resultMessage);
-				
-				// 메시지를 바이트 배열로 변환 후 길이와 함께 전송
+					byte[] receivedData = new byte[messageLength];
+					in_socket.readFully(receivedData, 0, messageLength);
+					String receivedMessage = new String(receivedData);
+					logger.info("Server response: " + receivedMessage);
+
+					// 통신사로 부터 받은 메시지를 그데로 결과 큐에 넣는다.
+					try {
+						while(true) {
+							int write_rc = resultQueue.write( receivedMessage );
+
+							if( write_rc < 0 ) {
+								logger.error("Write failed: " + resultQueue.path + "," + resultQueue.qname + "," + " rc: " + write_rc);
+								resultQueue.close();
+								return;
+							}
+							else if( write_rc == 0 ) { // queue is full
+								logger.info("full: " + resultQueue.path + "," + resultQueue.qname + "," + " rc: " + write_rc);
+								try {
+									Thread.sleep(10); // Pause for 1 second (1000)
+								}
+								catch(InterruptedException ex) {
+									Thread.currentThread().interrupt();
+								}
+								continue;
+							}
+							else {
+								long out_seq = resultQueue.get_out_seq();
+								long out_run_time = resultQueue.get_out_run_time();
+
+								System.out.println("("+threadId+")->receive thread:"+ "enQ success: " + "seq=" + out_seq + "," + "rc:" + write_rc);
+								try {
+									Thread.sleep(100); // Pause for 1 second (1000)
+								}
+								catch(InterruptedException ex) {
+										Thread.currentThread().interrupt();
+								}
+								break;
+							}
+						}
+					} catch (Exception e) {
+						logger.error("("+threadId+")"+ "resultQueue.write() 오류: " + e.getMessage());
+					}
+
+					// 잘받았다는 메시지를 보내기 위한 RECEIVE_RESULT json String 을 만든다.
+					JSONObject resultJson = new JSONObject();
+					resultJson.put("RECEIVE_RESULT", "OK");
+					String resultMessage = resultJson.toString();
+					System.out.println("receive result Generated JSON: " + resultMessage);
+					
+					// 메시지를 바이트 배열로 변환 후 길이와 함께 전송
+					try {
+						byte[] resultData = resultMessage.getBytes();
+						out_socket.writeInt( resultData.length ); // 길이 Prefix header 전송
+						out_socket.write( resultData ); // 서버에 메시지 전송
+					} catch( IOException e) {
+						System.err.println("(messageSenderServer)" + "writer.write:" + e.getMessage());
+						e.printStackTrace();
+					}
+					System.out.println("receive result sending OK.");
+				} // while(true)
+			} catch (IOException e) {
+				logger.error("(" + threadId + ")" + "socket exception:" + e.getMessage());
+				e.printStackTrace();
 				try {
-					byte[] resultData = resultMessage.getBytes();
-					out_socket.writeInt( resultData.length ); // 길이 Prefix header 전송
-					out_socket.write( resultData ); // 서버에 메시지 전송
-				} catch( IOException e) {
-					System.err.println("(messageSenderServer)" + "writer.write:" + e.getMessage());
-					e.printStackTrace();
+					Thread.sleep(5000); // Pause for 1 second (1000): 5초 후에 재연결을 시도한다.
 				}
-				System.out.println("receive result sending OK.");
-			} // while(true)
-		} catch (IOException e) {
-            logger.error("(" + threadId + ")" + "socket:" + e.getMessage());
-			e.printStackTrace();
-			return;
-		}
+				catch(InterruptedException ex) {
+						Thread.currentThread().interrupt();
+				}
+			}
+		} // while(true) socket
 	}
 
 	/////////////////////////////////////////////////////////////////////////
@@ -261,7 +268,7 @@ public class CoAgent {
 	private static void processMessageThread( int threadId, AgentConfig config) {
 		int rc;
 
-
+/*
 		// make a FileQueueJNI instance with naming test.
 		// 3-th argument is loglevel. (0: trace, 1: debug, 2: info, 3: Warning, 4: error, 5: emerg, 6: request)
 		// Use 1 in dev and 4 prod.
@@ -277,91 +284,129 @@ public class CoAgent {
 			logger.error("("+threadId+")"+ "open failed: " + " ackQueuePath="+ config.resultQueuePath + ", ackQueueName=" + config.resultQueueName + ", rc=" + rc);
 			return;
 		}
+*/
 
-		try (
-			Socket socket = new Socket(config.ackServerIp, config.ackServerPort);
-			DataOutputStream out_socket = new DataOutputStream(socket.getOutputStream());
-			DataInputStream in_socket = new DataInputStream(socket.getInputStream()) )  
-		{
-			logger.info("("+threadId+")"+ "Connected to the echo server." + ", IP=" + config.ackServerIp + ", PORT=" + config.ackServerPort );
-
-			// 비정상 종료시 미처리로 남아있던 파일을 처리한다.( 미리 커밋을 했을 경우, 메시지 누락 방지 )
-			// recovery 
-			String fileName = "thread_" + threadId + ".dat";
-			try {
-				String backupMsg = readFileIfExists( fileName );
-
-				if( backupMsg != null ) {
-					boolean  recoveryResult = RecoveryMessage(threadId, backupMsg, out_socket ); // 화면에 메시지 출력
-					if( recoveryResult == false ) {
-						logger.error("("+threadId+")"+ "backup recovery -> false ");
-						return;
-					}
-				}
-			} catch (IOException e) {
-				logger.error("("+threadId+")"+ "backup recovery 오류: " + e.getMessage());
+		while(true) {
+			// make a FileQueueJNI instance with naming test.
+			// 3-th argument is loglevel. (0: trace, 1: debug, 2: info, 3: Warning, 4: error, 5: emerg, 6: request)
+			// Use 1 in dev and 4 prod.
+			FileQueueJNI requestQueue = new FileQueueJNI( threadId, config.logFilePath, config.logLevel, config.deQueuePath, config.deQueueName);
+			if(  (rc = requestQueue.open()) < 0 ) {
+				logger.error("("+threadId+")"+ "open failed: " + "qPath="+ config.deQueuePath + ", qName=" + config.deQueueName + ", rc=" + rc);
 				return;
 			}
 
-			try {
-				// 무한반복 ( daemon )
-				while (true) {
-					int read_rc = 0;
-
-					read_rc = requestQueue.readXA(); // XA read 
-					if( read_rc < 0 ) {
-						logger.error("("+threadId+")"+ "readXA failed: " + requestQueue.path + "," + requestQueue.qname + "," + " rc: " + read_rc);
-						break;
-					}
-
-					if( read_rc == 0 ) {
-						logger.debug("("+threadId+")"+ "There is no data(empty) : " + requestQueue.path + "," + requestQueue.qname + "," + " rc: " + read_rc);
-						Thread.sleep(1000); // Pause for 1 second
-						continue;
-					}
-
-					String data = requestQueue.get_out_msg();
-					long out_seq = requestQueue.get_out_seq();
-					String out_unlink_filename = requestQueue.get_out_unlink_filename();
-					long out_run_time = requestQueue.get_out_run_time();
-
-
-					writeMessageToFile(threadId, data); // 파일에 메시지 쓰기
-					logger.debug("("+threadId+")"+ "backup file writing success");
-					requestQueue.commitXA();
-					logger.debug("("+threadId+")"+ "normal data: commitXA() sucesss seq : " + out_seq);
-
-					// 큐에서 꺼낸 데이터를 통신사(Simulator)에 보내고 ACK를 수신한다.
-					// ACK 메시지를 resultQueue 에 넣는다.
-					boolean your_job_result = DoMessage(threadId, read_rc, out_seq, out_run_time,  data, out_socket, in_socket, ackQueue ); // 화면에 메시지 출력
-
-					// input your jobs in here ///////////////////////////////////
-					// 
-					// 
-					///////////////////////////////////////////////////////////// 
-
-					if( your_job_result == true) { // normal data
-						deleteFile(threadId); // 파일 삭제
-						logger.debug("("+threadId+")"+ "deleteFile() sucesss seq : " + out_seq);
-					}
-					else { // abnormal data
-						requestQueue.cancelXA();
-						logger.debug("("+threadId+")"+ "abnormal data: cancelXA() sucesss seq : " + out_seq);
-						break;
-					}
-				}
-			} catch (InterruptedException ex) {
-				Thread.currentThread().interrupt();
-				logger.error("Thread " + threadId + " interrupted.");
-				
-			} finally {
-				requestQueue.close();
+			// We use threadID + 20 : Max threads is 20
+			FileQueueJNI ackQueue = new FileQueueJNI( threadId+20, config.logFilePath, config.logLevel, config.resultQueuePath , config.resultQueueName);
+			if(  (rc = ackQueue.open()) < 0 ) {
+				logger.error("("+threadId+")"+ "open failed: " + " ackQueuePath="+ config.resultQueuePath + ", ackQueueName=" + config.resultQueueName + ", rc=" + rc);
+				return;
 			}
-		} catch (IOException e) {
-            logger.error("(" + threadId + ")" + "socket:" + e.getMessage());
-			e.printStackTrace();
-			return;
-		}
+
+			try (
+				Socket socket = new Socket(config.ackServerIp, config.ackServerPort);
+				DataOutputStream out_socket = new DataOutputStream(socket.getOutputStream());
+				DataInputStream in_socket = new DataInputStream(socket.getInputStream()) )  
+			{
+				logger.info("("+threadId+")"+ "Connected to the echo server." + ", IP=" + config.ackServerIp + ", PORT=" + config.ackServerPort );
+
+				// 비정상 종료시 미처리로 남아있던 파일을 처리한다.( 미리 커밋을 했을 경우, 메시지 누락 방지 )
+				// recovery 
+				logger.info("("+threadId+")"+ "backup 파일 처리 시작." );
+				String fileName = "thread_" + threadId + ".dat";
+				try {
+					String backupMsg = readFileIfExists( fileName );
+
+					if( backupMsg != null ) {
+						boolean  recoveryResult = RecoveryMessage(threadId, backupMsg, out_socket ); // 화면에 메시지 출력
+						if( recoveryResult == false ) {
+							logger.error("("+threadId+")"+ "backup recovery -> false ");
+							return;
+						}
+					}
+				} catch (IOException e) {
+					logger.error("("+threadId+")"+ "backup recovery 오류: " + e.getMessage());
+					return;
+				}
+				logger.info("("+threadId+")"+ "backup 파일 처리 완료." );
+
+				try {
+					// 무한반복 ( daemon )
+					while (true) {
+						int read_rc = 0;
+
+						read_rc = requestQueue.readXA(); // XA read 
+						if( read_rc < 0 ) {
+							logger.error("("+threadId+")"+ "readXA failed: " + requestQueue.path + "," + requestQueue.qname + "," + " rc: " + read_rc);
+							break;
+						}
+
+						if( read_rc == 0 ) {
+							logger.debug("("+threadId+")"+ "There is no data(empty) : " + requestQueue.path + "," + requestQueue.qname + "," + " rc: " + read_rc);
+							Thread.sleep(1000); // Pause for 1 second
+							continue;
+						}
+
+						String data = requestQueue.get_out_msg();
+						long out_seq = requestQueue.get_out_seq();
+						String out_unlink_filename = requestQueue.get_out_unlink_filename();
+						long out_run_time = requestQueue.get_out_run_time();
+
+
+						writeMessageToFile(threadId, data); // 파일에 메시지 쓰기
+						logger.debug("("+threadId+")"+ "backup file writing success");
+						requestQueue.commitXA();
+						logger.debug("("+threadId+")"+ "normal data: commitXA() sucesss seq : " + out_seq);
+
+						// 큐에서 꺼낸 데이터를 통신사(Simulator)에 보내고 ACK를 수신한다.
+						// ACK 메시지를 resultQueue 에 넣는다.
+						boolean your_job_result = DoMessage(threadId, read_rc, out_seq, out_run_time,  data, out_socket, in_socket, ackQueue ); // 화면에 메시지 출력
+
+						// input your jobs in here ///////////////////////////////////
+						// 
+						// 
+						///////////////////////////////////////////////////////////// 
+
+						if( your_job_result == true) { // normal data
+							deleteFile(threadId); // 파일 삭제
+							logger.debug("("+threadId+")"+ "deleteFile() sucesss seq : " + out_seq);
+						}
+						else { // abnormal data
+							requestQueue.cancelXA();
+							logger.debug("("+threadId+")"+ "abnormal data: cancelXA() sucesss seq : " + out_seq);
+
+							break;
+						}
+					}
+				} catch (InterruptedException ex) {
+					Thread.currentThread().interrupt();
+					logger.error("Thread " + threadId + " interrupted.");
+					
+				} finally {
+					requestQueue.close();
+					ackQueue.close();
+				}
+			} catch (IOException e) {
+				logger.error("(" + threadId + ")" + "socket:" + e.getMessage());
+				e.printStackTrace();
+
+
+				try {
+					Thread.sleep(5000); // Pause for 1 second (1000): 5초 후에 재연결을 시도한다.
+				}
+				catch(InterruptedException ex) {
+						Thread.currentThread().interrupt();
+				}
+			} finally {
+				/*
+				if (socket != null && !socket.isClosed()) {
+					socket.close(); // 기존 소켓 닫기
+					logger.info("기존 소켓을 닫았습니다.");
+				}
+				*/
+				logger.error("(" + threadId + ")" + "socket finallly.");
+			}
+		} // while(true) : 소켓통신 무한반복
 	} 
 
 	private static String readFileIfExists(String filePath) throws IOException {
@@ -485,6 +530,7 @@ public class CoAgent {
 		} catch( IOException e ) {
             logger.error("(" + threadId + ")" + "socket.receive and enQ failed.:" + e.getMessage());
 			e.printStackTrace();
+			return false;
 		}
 
 		return true;
