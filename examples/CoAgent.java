@@ -1,5 +1,13 @@
+//////////////////////////////////////////////////////////////////////////////////// 
+// "This program is copyrighted by CLang Co., Ltd.
+// When using any part or the entirety of the code, 
+// please contact us via the email address below to obtain permission before use."
+//
 // CoAgent.java
-// 
+// 2024/12/29
+// kill -15 pid
+//////////////////////////////////////////////////////////////////////////////////// 
+//
 import com.clang.fq.*;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -49,6 +57,13 @@ import java.time.format.DateTimeFormatter;
 // Alternately, Java 8부터 지원하는 방식으로 AtomicInteger를 사용
 import java.util.concurrent.atomic.AtomicInteger;
 
+// 스레드 관리를 위한 목록
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
 // 구성 값을 저장할 클래스를 정의합니다.
 class AgentConfig {
     int logLevel;
@@ -87,7 +102,6 @@ class AgentConfig {
 public class CoAgent {
 	static {
     	System.loadLibrary("jfq"); // Load native library at runtime
-                                   // hello.dll (Windows) or libhello.so (Unixes)
 		System.loadLibrary("fq");
 	}
 	CoAgent () {
@@ -96,9 +110,10 @@ public class CoAgent {
 	private static final int RETRY_INTERVAL = 5000; // 3초 재시도 간격
 	private static final int THREAD_COUNT = 10;
 	private static final Logger logger = Logger.getLogger(CoAgent.class); // log4j Logger 인스턴스
+
+	private static volatile boolean running = true; // 종료 플래그
  
 	public static void main(String[] args) {
-		int rc;
 
 		System.out.println("args.length=" + args.length);
 		for(int i = 0; i< args.length; i++) {
@@ -110,7 +125,6 @@ public class CoAgent {
 			System.out.println("Usage: $ java CoAgent CoAgentConf.xml <enter>");
 			return;
 		}
-
 
 		// 입력받은 경로로 구성 파일을 읽습니다.
         AgentConfig config = readConfigFromFile(args[0]);
@@ -132,12 +146,17 @@ public class CoAgent {
 			scanner.close();
         }
 
-		// 이 값은 소켓에서 exception이 발생되어 어떤 Thread 가 종료되었을 때, 나머지 Thread 도 
-        // 같이 종료하기 위함이다.
-        AtomicInteger receiverStopFlag = new AtomicInteger(0);
-        // AtomicInteger senderStopFlag = new AtomicInteger(0);
+		// Shutdown Hook 등록
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println("Shutdown Hook 실행: 서버를 안전하게 종료 중...");
+            running = false; // 서버 실행 종료 신호
+        }));
 
+        // AtomicInteger receiverStopFlag = new AtomicInteger(0);
 
+		int rc;
+
+		// All threads use this queue.
 		FileQueueJNI resultQueue = new FileQueueJNI( config.senderThreads+1, config.logFilePath, config.logLevel, config.resultQueuePath, config.resultQueueName);
 		if(  (rc = resultQueue.open()) < 0 ) {
 			logger.error("filequeue open failed: " + "qPath="+ config.resultQueuePath + ", qName=" +  config.resultQueueName + ", rc=" + rc);
@@ -152,6 +171,7 @@ public class CoAgent {
 		final int receiveThreadId = config.senderThreads + 1;
 		// 스레드 수행
 		resultExecutor.execute(() -> processResultReceiverThread(resultQueue, receiveThreadId, config));
+
 		///////////////////////////////////////////////////////////////////////////
 
 
@@ -175,19 +195,22 @@ public class CoAgent {
 		}
 		///////////////////////////////////////////////////////////////////////////
 
+
+		System.out.println("모든 작업이 종료되었습니다. 프로그램을 안전하게 종료합니다.");
+
 		executor.shutdown(); // 스레드 종료
 		resultExecutor.shutdown(); // 스레드 종료
 
 	}
 
 	// 결과 수집 스래드: 중계사로 부터 계속해서 결과를 받아 resultQueue 에 넣는 서버
-	// 1. 결과를 넣을 파일큐 오픈
-	// 2. 중계사 연결
-	// 이하 무한 반복(3~4)
-	// 3. 결과 수신
-	// 4. 결과 수집 큐에 enQueue
+	// 1. 중계사 연결
+	// 이하 무한 반복(2~3)
+	// 2. 결과 수신
+	// 3. 결과 수집 큐에 enQueue
 	private static void processResultReceiverThread(FileQueueJNI resultQueue, int threadId, AgentConfig config)  {
-		while(true) { // 소켓 통신 무한반복
+		// while(true) { // 소켓 통신 무한반복
+		while(running) { // 소켓 통신 무한반복
 
 			try ( Socket socket = new Socket(config.resultServerIp, config.resultServerPort) ) {
 				logger.info("("+threadId+")"+ "Connected to the echo server." + ", IP=" + config.resultServerIp + ", PORT=" + config.resultServerPort );
@@ -204,7 +227,7 @@ public class CoAgent {
 						logger.info("("+threadId+")" + "Server response: " + receivedMessage);
 
 						// 통신사로 부터 받은 메시지를 그데로 결과 큐에 넣는다.
-						while(true) {
+						while(running) {
 							int write_rc = resultQueue.write( receivedMessage );
 
 							if( write_rc < 0 ) {
@@ -272,7 +295,7 @@ public class CoAgent {
 	/////////////////////////////////////////////////////////////////////////
 	private static void processMessageThread( FileQueueJNI requestQueue, FileQueueJNI resultQueue, int threadId, AgentConfig config) {
 
-		while(true) {
+		while(running) {
 			try ( Socket socket = new Socket(config.ackServerIp, config.ackServerPort) ) {
 				logger.info("("+threadId+")"+ "Connected to the ack server." + ", IP=" + config.ackServerIp + ", PORT=" + config.ackServerPort );
 				try ( DataOutputStream out_socket = new DataOutputStream(socket.getOutputStream());
@@ -300,7 +323,7 @@ public class CoAgent {
 					}
 
 					// 무한반복 ( daemon )
-					while (true) {
+					while (running) {
 						int read_rc = 0;
 
 						read_rc = requestQueue.readXA(); // XA read 
@@ -495,7 +518,7 @@ public class CoAgent {
 
     // my job
     private static boolean  RecoveryMessage(int threadId, String message, DataOutputStream out_socket) {
-	    System.out.println("(" + threadId + ")" + "recovery :"  + message);
+	    logger.info("(" + threadId + ")" + "recovery :"  + message);
 
 		try {
 			byte[] data = message.getBytes();
@@ -569,20 +592,20 @@ public class CoAgent {
     }
 	// print Config
 	private static void printConfig( AgentConfig config) {
-		System.out.println("---------- < configuration begin >--------------- ");
-		System.out.println("\t- Log Level: " + config.logLevel);
-		System.out.println("\t- Log File Path: " + config.logFilePath);
-		System.out.println("\t- Result Queue Path: " + config.resultQueuePath);
-		System.out.println("\t- Result Queue Name: " + config.resultQueueName);
-		System.out.println("\t- DeQueue Path: " + config.deQueuePath);
-		System.out.println("\t- DeQueue Name: " + config.deQueueName);
-		System.out.println("\t- User Working Time for Simulating : " + config.userWorkingTimeForSimulate);
-		System.out.println("\t- Sender Threads: " + config.senderThreads);
-		System.out.println("\t- ackServer IP for Simulating : " + config.ackServerIp);
-		System.out.println("\t- ackServer PORT for Simulating : " + config.ackServerPort);
-		System.out.println("\t- resultServer IP for Simulating : " + config.resultServerIp);
-		System.out.println("\t- resultServer PORT for Simulating : " + config.resultServerPort);
-		System.out.println("---------- < configuration end >--------------- ");
+		logger.debug("---------- < configuration begin >--------------- ");
+		logger.debug("\t- Log Level: " + config.logLevel);
+		logger.debug("\t- Log File Path: " + config.logFilePath);
+		logger.debug("\t- Result Queue Path: " + config.resultQueuePath);
+		logger.debug("\t- Result Queue Name: " + config.resultQueueName);
+		logger.debug("\t- DeQueue Path: " + config.deQueuePath);
+		logger.debug("\t- DeQueue Name: " + config.deQueueName);
+		logger.debug("\t- User Working Time for Simulating : " + config.userWorkingTimeForSimulate);
+		logger.debug("\t- Sender Threads: " + config.senderThreads);
+		logger.debug("\t- ackServer IP for Simulating : " + config.ackServerIp);
+		logger.debug("\t- ackServer PORT for Simulating : " + config.ackServerPort);
+		logger.debug("\t- resultServer IP for Simulating : " + config.resultServerIp);
+		logger.debug("\t- resultServer PORT for Simulating : " + config.resultServerPort);
+		logger.debug("---------- < configuration end >--------------- ");
 	}
 	private static boolean JsonParserAndVerify ( int threadId, String jsonString, boolean hcFlag ) {
         // JSON 문자열 입력
@@ -668,4 +691,5 @@ public class CoAgent {
         // 포맷팅된 문자열 반환
         return now.format(formatter);
     }
+
 } // class block end.
