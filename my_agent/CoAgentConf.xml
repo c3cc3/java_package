@@ -1,0 +1,16 @@
+<configuration>
+	<!-- Log level can be one of: TRACE:0, DEBUG:1, INFO:2, ERROR:4 -->
+    <logLevel>4</logLevel>
+	<logFilePath>/ums24/wiseu/fq/logs/CoAgent.log</logFilePath>
+	<resultQueuePath>/ums24/wiseu/fq/enmq</resultQueuePath>
+	<resultQueueName>RCS_HIST_RSLT</resultQueueName>
+	<deQueuePath>/ums24/wiseu/fq/enmq</deQueuePath>
+	<deQueueName>MY_SM_ONL</deQueueName>
+	<backupFilePath>/logs/fq/agents/my/agent/backup</backupFilePath>
+	<userWorkingTimeForSimulate>3</userWorkingTimeForSimulate>
+	<senderThreads>20</senderThreads>
+	<ackServerIp>127.0.0.1</ackServerIp>
+	<ackServerPort>5001</ackServerPort>
+	<resultServerIp>127.0.0.1</resultServerIp>
+	<resultServerPort>5002</resultServerPort>
+</configuration>
