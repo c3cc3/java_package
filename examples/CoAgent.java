@@ -149,13 +149,14 @@ public class CoAgent {
 		// Shutdown Hook 등록
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("Shutdown Hook 실행: 서버를 안전하게 종료 중...");
-            running = false; // 서버 실행 종료 신호
+            // running = false; // 서버 실행 종료 신호
         }));
 
         // AtomicInteger receiverStopFlag = new AtomicInteger(0);
 
 		int rc;
 
+		///////////////////////////////////////////////////////////////////////////
 		// All threads use this queue.
 		FileQueueJNI resultQueue = new FileQueueJNI( config.senderThreads+1, config.logFilePath, config.logLevel, config.resultQueuePath, config.resultQueueName);
 		if(  (rc = resultQueue.open()) < 0 ) {
@@ -171,7 +172,6 @@ public class CoAgent {
 		final int receiveThreadId = config.senderThreads + 1;
 		// 스레드 수행
 		resultExecutor.execute(() -> processResultReceiverThread(resultQueue, receiveThreadId, config));
-
 		///////////////////////////////////////////////////////////////////////////
 
 
@@ -196,7 +196,7 @@ public class CoAgent {
 		///////////////////////////////////////////////////////////////////////////
 
 
-		System.out.println("모든 작업이 종료되었습니다. 프로그램을 안전하게 종료합니다.");
+		//System.out.println("모든 작업이 종료되었습니다. 프로그램을 안전하게 종료합니다.");
 
 		executor.shutdown(); // 스레드 종료
 		resultExecutor.shutdown(); // 스레드 종료
@@ -224,10 +224,10 @@ public class CoAgent {
 						byte[] receivedData = new byte[messageLength];
 						in_socket.readFully(receivedData, 0, messageLength); // 메지시 길이만클 받는다.
 						String receivedMessage = new String(receivedData);
-						logger.info("("+threadId+")" + "Server response: " + receivedMessage);
+						logger.info("("+threadId+")" + "Server sends the result: " + receivedMessage);
 
 						// 통신사로 부터 받은 메시지를 그데로 결과 큐에 넣는다.
-						while(running) {
+						while(true) {
 							int write_rc = resultQueue.write( receivedMessage );
 
 							if( write_rc < 0 ) {
@@ -305,17 +305,21 @@ public class CoAgent {
 
 					// 비정상 종료시 미처리로 남아있던 파일을 처리한다.( 미리 커밋을 했을 경우, 메시지 누락 방지 )
 					// recovery 
-					logger.info("("+threadId+")"+ "backup 파일 처리 시작." );
 					String fileName = "thread_" + threadId + ".dat";
 					try {
 						String backupMsg = readFileIfExists( fileName );
 
 						if( backupMsg != null ) {
+							logger.info("("+threadId+")"+ "backup 파일 처리 시작.(" + fileName + ")" );
 							boolean  recoveryResult = RecoveryMessage(threadId, backupMsg, out_socket ); // 화면에 메시지 출력
 							if( recoveryResult == false ) {
 								logger.error("("+threadId+")"+ "backup recovery -> false ");
 								return;
 							}
+							logger.info("("+threadId+")"+ "backup 파일 처리 완료.(" + fileName + ")" );
+						}
+						else {
+							logger.info("("+threadId+")"+ "backup 파일 존재하지 않음");
 						}
 					} catch (IOException e) {
 						logger.error("("+threadId+")"+ "backup recovery 오류: " + e.getMessage());
@@ -323,7 +327,7 @@ public class CoAgent {
 					}
 
 					// 무한반복 ( daemon )
-					while (running) {
+					while (true) {
 						int read_rc = 0;
 
 						read_rc = requestQueue.readXA(); // XA read 

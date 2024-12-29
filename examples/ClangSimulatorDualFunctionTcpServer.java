@@ -179,12 +179,14 @@ public class ClangSimulatorDualFunctionTcpServer {
 							long out_run_time = interThreadComQueue.get_out_run_time();
 
 							System.out.println("(requestClient)->receive thread:"+ "enQ success: " + "seq=" + out_seq + "," + "rc:" + write_rc);
+/*
 							try {
 								Thread.sleep(100); // Pause for 1 second (1000)
 							}
 							catch(InterruptedException ex) {
 									Thread.currentThread().interrupt();
 							}
+*/
 							break;
 						}
 					}
