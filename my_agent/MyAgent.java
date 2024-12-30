@@ -64,6 +64,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+// 스트링 비교
+import java.util.Objects;
+
 // 구성 값을 저장할 클래스를 정의합니다.
 class MyAgentConfig {
     int logLevel;
@@ -360,12 +363,8 @@ public class MyAgent {
 
 						// 큐에서 꺼낸 데이터를 통신사(Simulator)에 보내고 ACK를 수신한다.
 						// ACK 메시지를 resultQueue 에 넣는다.
-						boolean your_job_result = DoMessage( threadId, read_rc, out_seq, out_run_time,  data, out_socket, in_socket, resultQueue ); // 화면에 메시지 출력
+						boolean your_job_result = DoMessage( threadId, read_rc, out_seq, out_run_time,  data, out_socket, in_socket, resultQueue ); 
 
-						// input your jobs in here ///////////////////////////////////
-						// 
-						// 
-						///////////////////////////////////////////////////////////// 
 
 						if( your_job_result == true) { // normal data
 							deleteFile(config, threadId); // 파일 삭제
@@ -440,17 +439,18 @@ public class MyAgent {
 
 
 		boolean healthCheckFlag = false;
-		boolean tf=JsonParserAndVerify ( threadId, jsonMessage, healthCheckFlag );
+		StringBuilder returnHistoryKey = new StringBuilder();
+		StringBuilder returnReceiver = new StringBuilder();
+		boolean tf=JsonParserAndVerify ( threadId, jsonMessage, healthCheckFlag, returnHistoryKey, returnReceiver );
 		if( tf == false ) {
             logger.error("(" + threadId + ")" + "JdonParerAndVerify() interrupted.");
 			return false;
 		}
 		if( healthCheckFlag == true) {
-            logger.info("(" + threadId + ")" + "Health checking message.");
+            logger.info("(" + threadId + ")" + "Health checking message. I do not delivery it.");
 			return true;
 		}
-
-	    logger.debug("(" + threadId + ")" + "JsonParserAndVerify() OK:" + " rc: " + rc + " msg: " + jsonMessage + " seq: " + out_seq + " run_time(micro seconds): " + out_run_time);
+	    logger.info("(" + threadId + ")" + "JsonParserAndVerify() OK:" + " key=" + returnHistoryKey + ", receiver=" + returnReceiver + " rc: " + rc + " msg: " + jsonMessage + " seq: " + out_seq + " run_time(micro seconds): " + out_run_time);
 
 		// 메시지를 바이트 배열로 변환 후 길이와 함께 전송
 		try {
@@ -619,7 +619,7 @@ public class MyAgent {
 		logger.debug("\t- resultServer PORT for Simulating : " + config.resultServerPort);
 		logger.debug("---------- < configuration end >--------------- ");
 	}
-	private static boolean JsonParserAndVerify ( int threadId, String jsonString, boolean hcFlag ) {
+	private static boolean JsonParserAndVerify ( int threadId, String jsonString, boolean hcFlag, StringBuilder returnHistoryKey, StringBuilder returnReceiver ) {
         // JSON 문자열 입력
         // String jsonString = "{\"name\":\"John\", \"age\":30, \"city\":\"New York\"}";
 
@@ -647,9 +647,16 @@ public class MyAgent {
 			) {
                 // 필드들이 존재하므로 데이터를 읽습니다.
                 String seq = jsonNode.get("SEQ").asText();
+				returnHistoryKey.append(seq);
+				
                 String channel = jsonNode.get("CHANNEL").asText();
+				if (Objects.equals(channel, "HC")) { // health check 
+					hcFlag = true;
+				}
+
                 String msgType = jsonNode.get("MSG_TYPE").asText();
                 String receiver = jsonNode.get("RECEIVER").asText();
+				returnReceiver.append(receiver);
                 String sender = jsonNode.get("SENDER").asText();
                 String brandId = jsonNode.get("BRAND_ID").asText();
                 String brandKey = jsonNode.get("BRAND_KEY").asText();

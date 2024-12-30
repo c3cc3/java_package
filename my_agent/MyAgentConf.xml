@@ -1,7 +1,7 @@
 <configuration>
 	<!-- Log level can be one of: TRACE:0, DEBUG:1, INFO:2, ERROR:4 -->
     <logLevel>4</logLevel>
-	<logFilePath>/logs/fq/agents/my/agent/CLang.log</logFilePath>
+	<logFilePath>/logs/fq/agents/my/agent/CLangFileQueue.log</logFilePath>
 	<resultQueuePath>/ums24/wiseu/fq/enmq</resultQueuePath>
 	<resultQueueName>RCS_HIST_RSLT</resultQueueName>
 	<deQueuePath>/ums24/wiseu/fq/enmq</deQueuePath>
