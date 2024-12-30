@@ -13,4 +13,5 @@
 	<ackServerPort>5001</ackServerPort>
 	<resultServerIp>127.0.0.1</resultServerIp>
 	<resultServerPort>5002</resultServerPort>
+	<jsonCheckMapFile>JsonCheckList.map</jsonCheckMapFile>
 </configuration>

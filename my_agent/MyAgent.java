@@ -69,6 +69,15 @@ import java.util.Objects;
 // AutomicBoolean
 import java.util.concurrent.atomic.AtomicBoolean;
 
+// json check
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.util.ArrayList;
+import java.util.List;
+
 // 구성 값을 저장할 클래스를 정의합니다.
 class MyAgentConfig {
     int logLevel;
@@ -84,9 +93,10 @@ class MyAgentConfig {
 	int		ackServerPort;
 	String	resultServerIp;
 	int		resultServerPort;
+	String 	jsonCheckMapFile;
 
     // 생성자
-    public MyAgentConfig(int logLevel, String logFilePath, String resultQueuePath, String resultQueueName, String deQueuePath, String deQueueName, String backupFilePath, int userWorkingTimeForSimulate, int senderThreads, String ackServerIp, int ackServerPort, String resultServerIp, int resultServerPort) {
+    public MyAgentConfig(int logLevel, String logFilePath, String resultQueuePath, String resultQueueName, String deQueuePath, String deQueueName, String backupFilePath, int userWorkingTimeForSimulate, int senderThreads, String ackServerIp, int ackServerPort, String resultServerIp, int resultServerPort, String jsonCheckMapFile) {
         this.logLevel = logLevel;
         this.logFilePath = logFilePath;
         this.resultQueuePath = resultQueuePath;
@@ -100,6 +110,80 @@ class MyAgentConfig {
         this.ackServerPort = ackServerPort;
         this.resultServerIp = resultServerIp;
         this.resultServerPort = resultServerPort;
+        this.jsonCheckMapFile = jsonCheckMapFile;
+    }
+}
+
+class CheckItem {
+    private String fieldName;
+    private int maxLength;
+    private boolean check;
+
+    public CheckItem(String fieldName, int maxLength, boolean check) {
+        this.fieldName = fieldName;
+        this.maxLength = maxLength;
+        this.check = check;
+    }
+
+    public String getFieldName() {
+        return fieldName;
+    }
+
+    public int getMaxLength() {
+        return maxLength;
+    }
+
+    public boolean isCheck() {
+        return check;
+    }
+}
+
+class JsonChecker {
+    private List<CheckItem> checkList = new ArrayList<>();
+
+    // Load JsonCheckList.map file into memory
+    public void loadCheckList(String filePath) throws Exception {
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(",");
+                if (parts.length != 3) continue; // Skip invalid lines
+                String fieldName = parts[0].trim();
+                int maxLength = Integer.parseInt(parts[1].trim());
+                boolean check = "Y".equalsIgnoreCase(parts[2].trim());
+                checkList.add(new CheckItem(fieldName, maxLength, check));
+            }
+        }
+    }
+
+    // Validate JSON message
+    public boolean validateJson(String jsonString) throws Exception {
+
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode jsonNode = mapper.readTree(jsonString);
+
+        for (CheckItem item : checkList) {
+            if (item.isCheck()) {
+                String fieldName = item.getFieldName();
+
+                // Check if the field exists
+                if (!jsonNode.has(fieldName)) {
+					return false;
+                }
+
+                // Check if the field value exceeds max length
+                String value = jsonNode.get(fieldName).asText();
+                if (value.length() > item.getMaxLength()) {
+                    System.out.println("Field exceeds max length: " + fieldName);
+                }
+            }
+        }
+		return true;
+    }
+
+	// Add this method to access the checklist
+    public List<CheckItem> getCheckList() {
+        return checkList;
     }
 }
 
@@ -171,6 +255,25 @@ public class MyAgent {
 			return;
 		}
 
+		// Loading JSON checkListMap 
+		JsonChecker jsonChecker = new JsonChecker();
+		try {
+            // Load checklist from file
+			jsonChecker.loadCheckList(config.jsonCheckMapFile);
+			
+			// Debug: Print loaded checklist
+            System.out.println("Loaded Check List:");
+            for (CheckItem item : jsonChecker.getCheckList()) {
+                System.out.println(item.getFieldName() + ", " + item.getMaxLength() + ", " + item.isCheck());
+            }
+
+            // Validate input JSON
+            // jsonChecker.validateJson(jsonInput);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
 		///////////////////////////////////////////////////////////////////////////
 		// ExecutorService를 사용하여 스레드 생성
 		ExecutorService resultExecutor = Executors.newFixedThreadPool(1); // 1개 스레드
@@ -198,7 +301,7 @@ public class MyAgent {
 				logger.error("("+threadId+")"+ "open failed: " + "qPath="+ config.deQueuePath + ", qName=" + config.deQueueName + ", rc=" + rc);
 				return;
 			}
-			executor.execute(() -> processMessageThread( requestQueue, resultQueue, threadId, config));
+			executor.execute(() -> processMessageThread( requestQueue, resultQueue, threadId, config, jsonChecker));
 		}
 		///////////////////////////////////////////////////////////////////////////
 
@@ -300,7 +403,7 @@ public class MyAgent {
 	//		writeFQ(jsonAckMessage); // enQ ack
 	//	}
 	/////////////////////////////////////////////////////////////////////////
-	private static void processMessageThread( FileQueueJNI requestQueue, FileQueueJNI resultQueue, int threadId, MyAgentConfig config) {
+	private static void processMessageThread( FileQueueJNI requestQueue, FileQueueJNI resultQueue, int threadId, MyAgentConfig config, JsonChecker jsonChecker) {
 
 		while(running) {
 			try ( Socket socket = new Socket(config.ackServerIp, config.ackServerPort) ) {
@@ -365,7 +468,7 @@ public class MyAgent {
 
 						// 큐에서 꺼낸 데이터를 통신사(Simulator)에 보내고 ACK를 수신한다.
 						// ACK 메시지를 resultQueue 에 넣는다.
-						boolean your_job_result = DoMessage( threadId, read_rc, out_seq, out_run_time,  data, out_socket, in_socket, resultQueue ); 
+						boolean your_job_result = DoMessage( threadId, read_rc, out_seq, out_run_time,  data, out_socket, in_socket, resultQueue, jsonChecker ); 
 
 
 						if( your_job_result == true) { // normal data
@@ -373,7 +476,7 @@ public class MyAgent {
 							logger.info("("+threadId+")"+ "The message was safely delivered to the server, so the backup file was deleted." + "seq=" + out_seq);
 						}
 						else { // abnormal data
-							// 소켓이 중간에 끊어지면 여기로 들어온다. (here-1)
+							// 소켓이 중간에 끊어지면 여기로 들어온다. 
 							requestQueue.cancelXA();
 							logger.debug("("+threadId+")"+ "abnormal data: cancelXA() sucesss seq : " + out_seq);
 
@@ -437,16 +540,15 @@ public class MyAgent {
     }
 
     // DeQ and send message to server.
-    private static boolean  DoMessage(int threadId, int rc, long out_seq, long out_run_time, String jsonMessage, DataOutputStream out_socket, DataInputStream in_socket, FileQueueJNI ackQueue ) {
-
+    private static boolean  DoMessage(int threadId, int rc, long out_seq, long out_run_time, String jsonMessage, DataOutputStream out_socket, DataInputStream in_socket, FileQueueJNI ackQueue, JsonChecker jsonChecker ) {
 
 		AtomicBoolean healthCheckFlag = new AtomicBoolean(false);
 		StringBuilder returnHistoryKey = new StringBuilder();
 		StringBuilder returnReceiver = new StringBuilder();
-		boolean tf=JsonParserAndVerify ( threadId, jsonMessage, healthCheckFlag, returnHistoryKey, returnReceiver );
+		boolean tf=JsonParserAndVerify ( threadId, jsonMessage, healthCheckFlag, returnHistoryKey, returnReceiver, jsonChecker );
 		if( tf == false ) {
-            logger.error("(" + threadId + ")" + "JdonParerAndVerify() interrupted.");
-			return false;
+            logger.error("(" + threadId + ")" + "The JSON failed to pass the validation logic. This message will be discarded.");
+			return true;
 		}
 		if( healthCheckFlag.get()== true) {
             logger.info("(" + threadId + ")" + "Health checking message. I do not delivery it.");
@@ -594,8 +696,11 @@ public class MyAgent {
             String resultServerPort_str = doc.getElementsByTagName("resultServerPort").item(0).getTextContent();
 			int resultServerPort = Integer.parseInt(resultServerPort_str); 
 
+			String jsonCheckMapFile =  doc.getElementsByTagName("jsonCheckMapFile").item(0).getTextContent();
+			System.out.println("jsonCheckMapFile=" + jsonCheckMapFile);
+
             // Config 객체를 생성합니다.
-            config = new MyAgentConfig(logLevel, logFilePath, resultQueuePath, resultQueueName, deQueuePath, deQueueName, backupFilePath, userWorkingTimeForSimulate, senderThreads, ackServerIp, ackServerPort, resultServerIp, resultServerPort);
+            config = new MyAgentConfig(logLevel, logFilePath, resultQueuePath, resultQueueName, deQueuePath, deQueueName, backupFilePath, userWorkingTimeForSimulate, senderThreads, ackServerIp, ackServerPort, resultServerIp, resultServerPort, jsonCheckMapFile);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -621,7 +726,20 @@ public class MyAgent {
 		logger.debug("\t- resultServer PORT for Simulating : " + config.resultServerPort);
 		logger.debug("---------- < configuration end >--------------- ");
 	}
-	private static boolean JsonParserAndVerify ( int threadId, String jsonString, AtomicBoolean  hcFlag, StringBuilder returnHistoryKey, StringBuilder returnReceiver ) {
+	private static boolean JsonParserAndVerify ( int threadId, String jsonString, AtomicBoolean  hcFlag, StringBuilder returnHistoryKey, StringBuilder returnReceiver , JsonChecker jsonChecker ) {
+
+		try {
+            // Validate input JSON
+			boolean tf;
+            tf = jsonChecker.validateJson(jsonString);
+			if( tf == false ) {
+				logger.error("The JSON failed to pass the validation logic. We throw it.");
+				return false;
+			}
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         // JSON 문자열 입력
         // String jsonString = "{\"name\":\"John\", \"age\":30, \"city\":\"New York\"}";
 
