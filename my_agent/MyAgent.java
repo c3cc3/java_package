@@ -66,6 +66,8 @@ import java.util.concurrent.TimeUnit;
 
 // 스트링 비교
 import java.util.Objects;
+// AutomicBoolean
+import java.util.concurrent.atomic.AtomicBoolean;
 
 // 구성 값을 저장할 클래스를 정의합니다.
 class MyAgentConfig {
@@ -438,7 +440,7 @@ public class MyAgent {
     private static boolean  DoMessage(int threadId, int rc, long out_seq, long out_run_time, String jsonMessage, DataOutputStream out_socket, DataInputStream in_socket, FileQueueJNI ackQueue ) {
 
 
-		boolean healthCheckFlag = false;
+		AtomicBoolean healthCheckFlag = new AtomicBoolean(false);
 		StringBuilder returnHistoryKey = new StringBuilder();
 		StringBuilder returnReceiver = new StringBuilder();
 		boolean tf=JsonParserAndVerify ( threadId, jsonMessage, healthCheckFlag, returnHistoryKey, returnReceiver );
@@ -446,7 +448,7 @@ public class MyAgent {
             logger.error("(" + threadId + ")" + "JdonParerAndVerify() interrupted.");
 			return false;
 		}
-		if( healthCheckFlag == true) {
+		if( healthCheckFlag.get()== true) {
             logger.info("(" + threadId + ")" + "Health checking message. I do not delivery it.");
 			return true;
 		}
@@ -619,7 +621,7 @@ public class MyAgent {
 		logger.debug("\t- resultServer PORT for Simulating : " + config.resultServerPort);
 		logger.debug("---------- < configuration end >--------------- ");
 	}
-	private static boolean JsonParserAndVerify ( int threadId, String jsonString, boolean hcFlag, StringBuilder returnHistoryKey, StringBuilder returnReceiver ) {
+	private static boolean JsonParserAndVerify ( int threadId, String jsonString, AtomicBoolean  hcFlag, StringBuilder returnHistoryKey, StringBuilder returnReceiver ) {
         // JSON 문자열 입력
         // String jsonString = "{\"name\":\"John\", \"age\":30, \"city\":\"New York\"}";
 
@@ -651,7 +653,7 @@ public class MyAgent {
 				
                 String channel = jsonNode.get("CHANNEL").asText();
 				if (Objects.equals(channel, "HC")) { // health check 
-					hcFlag = true;
+					hcFlag.set(true);
 				}
 
                 String msgType = jsonNode.get("MSG_TYPE").asText();
@@ -683,9 +685,6 @@ public class MyAgent {
             	logger.debug("\t-(" + threadId + ")" + "MESSAGEBASE_ID: " + messageBaseId);
             	logger.debug("\t-(" + threadId + ")" + "MESSAGE: " + message);
 
-				if (channel.equalsIgnoreCase("HC")) { // is health checking.
-					hcFlag = true;
-				}
 				return true;
             } else {
             	logger.debug("--------------------------JSON Check ERROR------------------------");
