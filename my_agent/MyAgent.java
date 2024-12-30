@@ -78,6 +78,11 @@ import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.List;
 
+// Delete 
+import java.io.File;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 // 구성 값을 저장할 클래스를 정의합니다.
 class MyAgentConfig {
     int logLevel;
@@ -171,13 +176,14 @@ class JsonChecker {
 
                 // Check if the field exists
                 if (!jsonNode.has(fieldName)) {
+                    logger.error("Field is not exist in map: " + fieldName);
 					return false;
                 }
 
                 // Check if the field value exceeds max length
                 String value = jsonNode.get(fieldName).asText();
                 if (value.length() > item.getMaxLength()) {
-                    System.out.println("Field exceeds max length: " + fieldName);
+                    logger.error("Field exceeds max length: " + fieldName);
                 }
             }
         }
@@ -199,6 +205,13 @@ class ChannelFileMapper {
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line;
             while ((line = reader.readLine()) != null) {
+				line = line.trim(); // Remove leading/trailing whitespace
+
+				// Skip comments and empty lines
+				if (line.startsWith("#") || line.isEmpty()) {
+					continue;
+				}
+
                 String[] parts = line.split(",");
                 if (parts.length != 2) continue; // Skip invalid lines
                 String channel = parts[0].trim();
@@ -216,6 +229,31 @@ class ChannelFileMapper {
     // Check if a channel exists
     public boolean hasChannel(String channelName) {
         return channelMap.containsKey(channelName);
+    }
+}
+
+
+class FileDeletion {
+    private static final Logger logger = Logger.getLogger(FileDeletion.class);
+
+    public static void deleteFilesInParallel(MyAgentConfig config, int[] threadIds) {
+        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+
+        for (int threadId : threadIds) {
+            executor.submit(() -> deleteFile(config, threadId));
+        }
+
+        executor.shutdown();
+    }
+
+    private static void deleteFile(MyAgentConfig config, int threadId) {
+        String fileName = config.backupFilePath + "/" + "thread_" + threadId + ".dat";
+        File file = new File(fileName);
+        if (file.delete()) {
+            logger.info("(" + threadId + ") Deleted file: " + fileName);
+        } else {
+            logger.error("(" + threadId + ") Failed to delete file: " + fileName);
+        }
     }
 }
 
@@ -528,6 +566,7 @@ public class MyAgent {
 
 
 						if( your_job_result == true) { // normal data
+							//FileDeletion.deleteFilesInParallel(config, threadId); // 클래스 이름으로 정적 메서드 호출
 							deleteFile(config, threadId); // 파일 삭제
 							logger.info("("+threadId+")"+ "The message was safely delivered to the server, so the backup file was deleted." + "seq=" + out_seq);
 						}
@@ -751,12 +790,8 @@ public class MyAgent {
             String resultServerIp = doc.getElementsByTagName("resultServerIp").item(0).getTextContent();
             String resultServerPort_str = doc.getElementsByTagName("resultServerPort").item(0).getTextContent();
 			int resultServerPort = Integer.parseInt(resultServerPort_str); 
-
 			String channelName =  doc.getElementsByTagName("channelName").item(0).getTextContent();
-			System.out.println("channelName=" + channelName);
-
 			String channelMapFile =  doc.getElementsByTagName("channelMapFile").item(0).getTextContent();
-			System.out.println("channelMapFile=" + channelName);
 
             // Config 객체를 생성합니다.
             config = new MyAgentConfig(logLevel, logFilePath, resultQueuePath, resultQueueName, deQueuePath, deQueueName, backupFilePath, userWorkingTimeForSimulate, senderThreads, ackServerIp, ackServerPort, resultServerIp, resultServerPort, channelName, channelMapFile);
