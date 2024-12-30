@@ -1,4 +1,5 @@
 <configuration>
+	<channelName>RCS</channelName>
 	<!-- Log level can be one of: TRACE:0, DEBUG:1, INFO:2, ERROR:4 -->
     <logLevel>4</logLevel>
 	<logFilePath>/logs/fq/agents/my/agent/CLangFileQueue.log</logFilePath>
@@ -13,5 +14,5 @@
 	<ackServerPort>5001</ackServerPort>
 	<resultServerIp>127.0.0.1</resultServerIp>
 	<resultServerPort>5002</resultServerPort>
-	<jsonCheckMapFile>JsonCheckList_RCS.map</jsonCheckMapFile>
+	<channelMapFile>ChannelMapFile.map</channelMapFile>
 </configuration>

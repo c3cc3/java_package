@@ -93,10 +93,11 @@ class MyAgentConfig {
 	int		ackServerPort;
 	String	resultServerIp;
 	int		resultServerPort;
-	String 	jsonCheckMapFile;
+	String 	channelName;
+	String 	channelMapFile;
 
     // 생성자
-    public MyAgentConfig(int logLevel, String logFilePath, String resultQueuePath, String resultQueueName, String deQueuePath, String deQueueName, String backupFilePath, int userWorkingTimeForSimulate, int senderThreads, String ackServerIp, int ackServerPort, String resultServerIp, int resultServerPort, String jsonCheckMapFile) {
+    public MyAgentConfig(int logLevel, String logFilePath, String resultQueuePath, String resultQueueName, String deQueuePath, String deQueueName, String backupFilePath, int userWorkingTimeForSimulate, int senderThreads, String ackServerIp, int ackServerPort, String resultServerIp, int resultServerPort, String channelName, String channelMapFile) {
         this.logLevel = logLevel;
         this.logFilePath = logFilePath;
         this.resultQueuePath = resultQueuePath;
@@ -110,7 +111,8 @@ class MyAgentConfig {
         this.ackServerPort = ackServerPort;
         this.resultServerIp = resultServerIp;
         this.resultServerPort = resultServerPort;
-        this.jsonCheckMapFile = jsonCheckMapFile;
+        this.channelName = channelName;
+        this.channelMapFile = channelMapFile;
     }
 }
 
@@ -187,6 +189,35 @@ class JsonChecker {
     }
 }
 
+class ChannelFileMapper {
+    private Map<String, String> channelMap = new HashMap<>();
+
+    // Load the map file into memory
+    public void loadChannelMap(String filePath) throws Exception {
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(",");
+                if (parts.length != 2) continue; // Skip invalid lines
+                String channel = parts[0].trim();
+                String fileName = parts[1].trim();
+                channelMap.put(channel, fileName);
+            }
+        }
+    }
+
+    // Get the file name for a given channel
+    public String getFileName(String channelName) {
+        return channelMap.get(channelName);
+    }
+
+    // Check if a channel exists
+    public boolean hasChannel(String channelName) {
+        return channelMap.containsKey(channelName);
+    }
+}
+
+
 /*
 ** Warning: max buffer size is 65536
 */
@@ -255,11 +286,34 @@ public class MyAgent {
 			return;
 		}
 
+		ChannelFileMapper channelFileMapper = new ChannelFileMapper();
+		String channelMapFile = config.channelMapFile; // Map 파일 경로
+		String channelName = config.channelName; // 찾고자 하는 채널명
+		String JsonCheckListMapFile = null;
+		try {
+            // Load the channel map file
+            channelFileMapper.loadChannelMap(channelMapFile);
+
+            // Get the file name for the given channel
+            if (channelFileMapper.hasChannel(channelName)) {
+                JsonCheckListMapFile = channelFileMapper.getFileName(channelName);
+                System.out.println("File name for channel " + channelName + ": " + JsonCheckListMapFile);
+
+                // Open the file (dummy operation for demonstration)
+                System.out.println("Opening file: " + JsonCheckListMapFile);
+            } else {
+                System.out.println("Channel " + channelName + " not found in the map.");
+				return;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+		
 		// Loading JSON checkListMap 
 		JsonChecker jsonChecker = new JsonChecker();
 		try {
             // Load checklist from file
-			jsonChecker.loadCheckList(config.jsonCheckMapFile);
+			jsonChecker.loadCheckList(JsonCheckListMapFile);
 			
 			// Debug: Print loaded checklist
             System.out.println("Loaded Check List:");
@@ -696,11 +750,14 @@ public class MyAgent {
             String resultServerPort_str = doc.getElementsByTagName("resultServerPort").item(0).getTextContent();
 			int resultServerPort = Integer.parseInt(resultServerPort_str); 
 
-			String jsonCheckMapFile =  doc.getElementsByTagName("jsonCheckMapFile").item(0).getTextContent();
-			System.out.println("jsonCheckMapFile=" + jsonCheckMapFile);
+			String channelName =  doc.getElementsByTagName("channelName").item(0).getTextContent();
+			System.out.println("channelName=" + channelName);
+
+			String channelMapFile =  doc.getElementsByTagName("channelMapFile").item(0).getTextContent();
+			System.out.println("channelMapFile=" + channelName);
 
             // Config 객체를 생성합니다.
-            config = new MyAgentConfig(logLevel, logFilePath, resultQueuePath, resultQueueName, deQueuePath, deQueueName, backupFilePath, userWorkingTimeForSimulate, senderThreads, ackServerIp, ackServerPort, resultServerIp, resultServerPort, jsonCheckMapFile);
+            config = new MyAgentConfig(logLevel, logFilePath, resultQueuePath, resultQueueName, deQueuePath, deQueueName, backupFilePath, userWorkingTimeForSimulate, senderThreads, ackServerIp, ackServerPort, resultServerIp, resultServerPort, channelName, channelMapFile);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -708,6 +765,7 @@ public class MyAgent {
 
         return config;  // Config 객체 반환
     }
+
 	// print Config
 	private static void printConfig( MyAgentConfig config) {
 		logger.debug("---------- < configuration begin >--------------- ");
@@ -724,8 +782,11 @@ public class MyAgent {
 		logger.debug("\t- ackServer PORT for Simulating : " + config.ackServerPort);
 		logger.debug("\t- resultServer IP for Simulating : " + config.resultServerIp);
 		logger.debug("\t- resultServer PORT for Simulating : " + config.resultServerPort);
+		logger.debug("\t- channel Name : " + config.channelName);
+		logger.debug("\t- channel Map File : " + config.channelMapFile);
 		logger.debug("---------- < configuration end >--------------- ");
 	}
+
 	private static boolean JsonParserAndVerify ( int threadId, String jsonString, AtomicBoolean  hcFlag, StringBuilder returnHistoryKey, StringBuilder returnReceiver , JsonChecker jsonChecker ) {
 
 		try {
@@ -733,9 +794,10 @@ public class MyAgent {
 			boolean tf;
             tf = jsonChecker.validateJson(jsonString);
 			if( tf == false ) {
-				logger.error("The JSON failed to pass the validation logic. We throw it.");
+				logger.error("(" + threadId + ")" + "The JSON failed to pass the validation logic. We throw it.");
 				return false;
 			}
+            logger.info("(" + threadId + ")" + "jsonCheck -> paased.");
         } catch (Exception e) {
             e.printStackTrace();
         }
