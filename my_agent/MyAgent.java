@@ -141,6 +141,7 @@ class CheckItem {
 }
 
 class JsonChecker {
+	private static final Logger logger = Logger.getLogger(JsonChecker.class);
     private List<CheckItem> checkList = new ArrayList<>();
 
     // Load JsonCheckList.map file into memory
@@ -190,6 +191,7 @@ class JsonChecker {
 }
 
 class ChannelFileMapper {
+	private static final Logger logger = Logger.getLogger(ChannelFileMapper.class);
     private Map<String, String> channelMap = new HashMap<>();
 
     // Load the map file into memory
