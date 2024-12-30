@@ -215,7 +215,7 @@ public class MyAgent {
 		while(running) { // 소켓 통신 무한반복
 
 			try ( Socket socket = new Socket(config.resultServerIp, config.resultServerPort) ) {
-				logger.info("("+threadId+")"+ "Connected to the echo server." + ", IP=" + config.resultServerIp + ", PORT=" + config.resultServerPort );
+				logger.info("("+threadId+")"+ "Connected to server." + ", IP=" + config.resultServerIp + ", PORT=" + config.resultServerPort );
 				try ( DataOutputStream out_socket = new DataOutputStream(socket.getOutputStream());
 					DataInputStream in_socket = new DataInputStream(socket.getInputStream()) ) {
 
@@ -303,7 +303,7 @@ public class MyAgent {
 				try ( DataOutputStream out_socket = new DataOutputStream(socket.getOutputStream());
 					DataInputStream in_socket = new DataInputStream(socket.getInputStream()) ) {
 
-					logger.info("("+threadId+")"+ "Connected to the echo server." + ", IP=" + config.ackServerIp + ", PORT=" + config.ackServerPort );
+					logger.info("("+threadId+")"+ "Connected to server." + ", IP=" + config.ackServerIp + ", PORT=" + config.ackServerPort );
 
 					// 비정상 종료시 미처리로 남아있던 파일을 처리한다.( 미리 커밋을 했을 경우, 메시지 누락 방지 )
 					// recovery 
@@ -344,10 +344,14 @@ public class MyAgent {
 							continue;
 						}
 
+						
+
 						String data = requestQueue.get_out_msg();
 						long out_seq = requestQueue.get_out_seq();
 						String out_unlink_filename = requestQueue.get_out_unlink_filename();
 						long out_run_time = requestQueue.get_out_run_time();
+
+						logger.info("("+threadId+")"+ "I have taken a message from queue." + "seq=" + out_seq);
 
 
 						writeMessageToFile(config, threadId, data); // 파일에 메시지 쓰기
