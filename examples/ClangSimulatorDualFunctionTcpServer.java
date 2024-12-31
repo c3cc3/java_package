@@ -304,9 +304,8 @@ public class ClangSimulatorDualFunctionTcpServer {
 					String out_unlink_filename = interThreadComQueue.get_out_unlink_filename();
 					long out_run_time = interThreadComQueue.get_out_run_time();
 
-					writeMessageToFile(threadId, data); // 파일에 메시지 쓰기
-					System.out.println("("+threadId+")"+ "backup file writing success");
-					interThreadComQueue.commitXA();
+					// writeMessageToFile(threadId, data); // 파일에 메시지 쓰기
+					// System.out.println("("+threadId+")"+ "backup file writing success");
 					System.out.println("("+threadId+")"+ "normal data: commitXA() sucesss seq : " + out_seq);
 
 					// deQ 데이터에서 HISTORY_KEY(SEQ)를 꺼낸다.
@@ -367,7 +366,8 @@ public class ClangSimulatorDualFunctionTcpServer {
 						// OK 가 들어오면 filequeue commit 을 수행한다.
 
 						if( your_job_result == true) { // normal data
-							deleteFile(threadId); // 파일 삭제
+							interThreadComQueue.commitXA();
+							// deleteFile(threadId); // 파일 삭제
 							System.out.println("("+threadId+")"+ "deleteFile() sucesss seq : " + out_seq);
 						}
 						else { // abnormal data
@@ -377,7 +377,8 @@ public class ClangSimulatorDualFunctionTcpServer {
 						}
 					}
 					else { // json parsing error.
-						deleteFile(threadId); // 파일 삭제
+						interThreadComQueue.commitXA();
+						System.err.println("("+threadId+")"+ "json parsing error. We throw it.");
 					}
 				}
 			} catch (InterruptedException ex) {
