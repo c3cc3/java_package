@@ -2,6 +2,8 @@
 ** Warning: max buffer size is 65536
 */
 import java.io.IOException;
+import java.time.LocalDateTime;
+
 
 public class TestWriteLoop {
 	// Test Driver
@@ -38,7 +40,12 @@ public class TestWriteLoop {
 			for(int i=0; i<testCount; i++) {
 				int deQ_count=0;
 				for(;;) { // polling file queue.
-					rc = test.write("This is a test data"); 
+
+					String now = LocalDateTime.now().toString();
+					String SendMessage = now + ", This is a test messaage";
+					System.out.println(SendMessage);
+
+					rc = test.write(SendMessage); 
 					if( rc < 0 ) {
 						System.out.println("readXA failed: " + qpath + "," + qname + "," + " rc: " + rc);
 						break;
