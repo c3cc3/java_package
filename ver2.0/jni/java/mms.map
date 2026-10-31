@@ -1,0 +1,28 @@
+# Source: 수협은행 UMS 분배기_Agent간 메시지 전송규격 정의서(JSON) - 신규(MMS)
+# NAME | LENGTH_TYPE | LENGTH | REQUIRED | VALIDATION | GENERATOR
+# REQUIRED=Y is a test assumption: original spreadsheet does not specify required flags.
+# MSG_KiND normalized to MSG_KIND for Agent compatibility; confirm production field spelling.
+MSG_TITLE | MAX | 64 | Y | ANY | FIXED:MMS Test Message
+HISTORY_KEY | MAX | 32 | Y | ANY | SEQ:H,1,10
+MSG_KIND | MAX | 1 | Y | ENUM:S,L,M | FIXED:M
+MSG_TYPE | MAX | 1 | Y | ANY | FIXED:1
+SETTLE_CODE | MAX | 1 | Y | ANY | FIXED:Y
+SUB_STORE_NO | MAX | 4 | Y | ANY | FIXED:0011
+BANK_GUBUN | MAX | 1 | Y | ANY | FIXED:1
+SETTLE_DUMMY | MAX | 14 | N | ANY | FIXED: 
+MSG_VER | MAX | 2 | Y | ANY | FIXED:01
+REQUEST_CO_ID | MAX | 10 | Y | ANY | FIXED:0000012345
+REQUEST_DTTM | MAX | 14 | Y | DATETIME14 | NOW14
+DIST_Q_DTTM | MAX | 14 | Y | DATETIME14 | NOW14
+RCV_PHN_NO | MAX | 16 | Y | ANY | FIXED:1012345678
+SND_PHN_NO | MAX | 16 | Y | ANY | FIXED:0215881200
+CALLBACK_NO | MAX | 16 | Y | ANY | FIXED:15555555
+SERVICE_ID | MAX | 15 | Y | ANY | FIXED:123456789012345
+EXTRA | MAX | 118 | N | ANY | FIXED: 
+MMS_TITLE | MAX | 64 | Y | ANY | FIXED:MMS Test Title
+MMS_MESSAGE | MAX | 2000 | Y | ANY | FIXED:FileQueue MMS test message
+ATTACH_COUNT | MAX | 2 | Y | ANY | FIXED:1
+CONTENTS_TYPE | MAX | 3 | Y | ENUM:TXT,IMG,ADO,MOV | FIXED:IMG
+ATTACH_KIND | MAX | 1 | Y | ANY | FIXED:1
+ATTACH_PATH | MAX | 256 | N | ANY | FIXED:/tmp/test.jpg
+ATTACH_NAME | MAX | 64 | N | ANY | FIXED:test.jpg
