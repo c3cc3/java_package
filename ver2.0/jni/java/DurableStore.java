@@ -74,6 +74,7 @@ public final class DurableStore implements AutoCloseable {
         public State state;
         public int retryCount;
         public byte[] result;
+        public int publishedCount;
 
         StoredMessage(
             String id,
@@ -344,9 +345,31 @@ public final class DurableStore implements AutoCloseable {
             synchronized (this) {
                 StoredMessage m = require(id);
                 m.result = result.clone();
+                m.publishedCount = 0;
                 m.state = State.RESULT_PENDING;
             }
 
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /** Durable checkpoint after each individual output enqueue. */
+    public void setPublishedCount(String id, int count) throws IOException {
+        ReentrantLock lock = lockFor(id);
+        lock.lock();
+        try {
+            synchronized (this) {
+                StoredMessage m = require(id);
+                if (count != m.publishedCount + 1)
+                    throw new IllegalArgumentException("Invalid output checkpoint " + id + ":" + count);
+            }
+            ObjectNode event = JSON.createObjectNode();
+            event.put("event", "PUBLISHED");
+            event.put("id", id);
+            event.put("count", count);
+            append(event);
+            synchronized (this) { require(id).publishedCount = count; }
         } finally {
             lock.unlock();
         }
@@ -700,9 +723,15 @@ public final class DurableStore implements AutoCloseable {
                         e.path("result").asText()
                     );
                     m.state = State.RESULT_PENDING;
+                    m.publishedCount = 0;
                     break;
                 }
 
+                case "PUBLISHED": {
+                    StoredMessage m = require(id);
+                    m.publishedCount = e.path("count").asInt();
+                    break;
+                }
                 case "DISCARD": {
                     messages.remove(id);
                     break;

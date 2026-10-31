@@ -159,6 +159,21 @@ public final class JsonAudit {
         }
     }
 
+    /** Parse one flat JSON object; reject duplicate keys and non-string values. */
+    public static Map<String, String> parseObject(String json) {
+        return new Parser(json).object();
+    }
+
+    /** Validate a previously parsed object without printing to stdout. */
+    public static List<String> validateObject(
+            List<FieldMap.Field> fields, Map<String, String> values) {
+        List<String> errors = new java.util.ArrayList<>();
+        for (FieldMap.Field field : fields) {
+            errors.addAll(FieldMap.validate(field, values.get(field.name)));
+        }
+        return errors;
+    }
+
     private static boolean audit(List<FieldMap.Field> fields, String json, int record) {
         Map<String, String> values;
         try {

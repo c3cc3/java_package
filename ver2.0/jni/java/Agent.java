@@ -1,534 +1,298 @@
-//
-// Agent.java ( 삼성증권 SMS(단문) 기준 Audit 처리함
-//
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.util.Properties;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-public class Agent {
+/** FileQueue JNI agent: map-based request audit and ACK/RESULT generation. */
+public final class Agent {
+    private static final DateTimeFormatter DATE14 =
+        DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+    private static final AtomicBoolean RUNNING = new AtomicBoolean(true);
 
-    // --------------------------------------------------
-    // Configuration
-    // --------------------------------------------------
+    private final Properties config;
+    private final Map<String, List<FieldMap.Field>> inputMaps = new HashMap<>();
+    private final List<FieldMap.Field> ackMap;
+    private final List<FieldMap.Field> resultMap;
+    private final JsonGenerator generator = new JsonGenerator();
+    private final FQueue fq = new FQueue();
 
-    private static class Config {
-        String logFile;
-        int logLevel;
+    private int inputQueueId = -1;
+    private int outputQueueId = -1;
+    private int errorQueueId = -1;
+    private boolean loggerOpened;
+    private long responseSequence;
 
-        String queuePath;
-        String inputQueue;
-        String outputQueue;
-
-        int dequeueIdleMs;
-        int retryDelayMs;
-        int shutdownTimeoutSeconds;
-
-        static Config load(String file) throws IOException {
-            Properties p = new Properties();
-
-            try (FileInputStream in = new FileInputStream(file)) {
-                p.load(in);
-            }
-
-            Config c = new Config();
-
-            c.logFile = required(p, "log.file");
-            c.logLevel = integer(p, "log.level");
-
-            c.queuePath = required(p, "queue.path");
-            c.inputQueue = required(p, "queue.input");
-            c.outputQueue = required(p, "queue.output");
-
-            c.dequeueIdleMs = integer(p, "dequeue.idle.ms");
-            c.retryDelayMs = integer(p, "retry.delay.ms");
-            c.shutdownTimeoutSeconds =
-                integer(p, "worker.shutdown.timeout.seconds");
-
-            // Configuration validation
-            if (c.logLevel < 0) {
-                throw new IllegalArgumentException(
-                    "log.level must be >= 0");
-            }
-
-            if (c.dequeueIdleMs < 0) {
-                throw new IllegalArgumentException(
-                    "dequeue.idle.ms must be >= 0");
-            }
-
-            if (c.retryDelayMs < 0) {
-                throw new IllegalArgumentException(
-                    "retry.delay.ms must be >= 0");
-            }
-
-            if (c.shutdownTimeoutSeconds <= 0) {
-                throw new IllegalArgumentException(
-                    "worker.shutdown.timeout.seconds must be > 0");
-            }
-
-            return c;
+    private Agent(String configFile) throws Exception {
+        config = new Properties();
+        try (FileInputStream stream = new FileInputStream(configFile)) {
+            config.load(stream);
         }
-
-        private static String required(
-                Properties p, String key) {
-
-            String value = p.getProperty(key);
-
-            if (value == null || value.trim().isEmpty()) {
-                throw new IllegalArgumentException(
-                    "Missing configuration: " + key);
-            }
-
-            return value.trim();
-        }
-
-        private static int integer(
-                Properties p, String key) {
-
-            String value = required(p, key);
-
-            try {
-                return Integer.parseInt(value);
-            } catch (NumberFormatException e) {
-                throw new IllegalArgumentException(
-                    "Invalid integer configuration: "
-                    + key + "=" + value, e);
-            }
-        }
+        inputMaps.put("S", loadMap("map.sms"));
+        inputMaps.put("L", loadMap("map.lms"));
+        inputMaps.put("M", loadMap("map.mms"));
+        ackMap = loadMap("map.ack");
+        resultMap = loadMap("map.result");
     }
 
-    // --------------------------------------------------
-    // Constants and shared objects
-    // --------------------------------------------------
-
-    private static Config config;
-
-    private static final ObjectMapper JSON =
-        new ObjectMapper();
-
-    private static final AtomicBoolean running =
-        new AtomicBoolean(true);
-
-    private static FQueue fq;
-
-    private static int inputQueueId = -1;
-    private static int outputQueueId = -1;
-
-    private enum ProcessResult {
-        COMMITTED,
-        RETRY,
-        FATAL
+    private String setting(String key) {
+        String value = config.getProperty(key);
+        if (value == null || value.trim().isEmpty()) {
+            throw new IllegalArgumentException("Missing property: " + key);
+        }
+        return value.trim();
     }
 
-    // --------------------------------------------------
-    // Main
-    // --------------------------------------------------
+    private int number(String key) {
+        return Integer.parseInt(setting(key));
+    }
 
-    public static void main(String[] args) throws Exception {
+    private List<FieldMap.Field> loadMap(String key) throws Exception {
+        return FieldMap.load(Path.of(setting(key)));
+    }
 
-        String configFile =
-            args.length > 0 ? args[0] : "Agent.properties";
-
-        // Load and validate configuration before opening resources.
-        config = Config.load(configFile);
-
-        fq = new FQueue();
-
-        int rc = fq.openLogger(
-            config.logFile,
-            config.logLevel);
-
-        if (rc <= 0) {
-            throw new IllegalStateException(
-                "Cannot open FileQueue logger: " + rc);
+    private void open() {
+        int loggerRc = fq.openLogger(setting("log.file"), number("log.level"));
+        if (loggerRc <= 0) {
+            throw new IllegalStateException("openLogger failed: " + loggerRc);
         }
-
-        inputQueueId = fq.openQueue(
-            config.queuePath,
-            config.inputQueue);
-
+        loggerOpened = true;
+        inputQueueId = fq.openQueue(setting("queue.path"), setting("queue.input"));
         if (inputQueueId < 0) {
-            fq.closeLogger();
-
-            throw new IllegalStateException(
-                "Cannot open input queue: "
-                + config.inputQueue);
+            throw new IllegalStateException("Cannot open input queue");
         }
-
-        outputQueueId = fq.openQueue(
-            config.queuePath,
-            config.outputQueue);
-
+        String errorQueue = setting("queue.error");
+        if (errorQueue.equals(setting("queue.input")) ||
+            errorQueue.equals(setting("queue.output"))) {
+            throw new IllegalArgumentException("queue.error must be a separate queue");
+        }
+        outputQueueId = fq.openQueue(setting("queue.path"), setting("queue.output"));
         if (outputQueueId < 0) {
-            fq.closeQueue(inputQueueId);
-            fq.closeLogger();
-
-            throw new IllegalStateException(
-                "Cannot open output queue: "
-                + config.outputQueue);
+            throw new IllegalStateException("Cannot open output queue");
         }
-
-        Runtime.getRuntime().addShutdownHook(
-            new Thread(() -> running.set(false)));
-
-        ExecutorService worker =
-            Executors.newSingleThreadExecutor();
-
-        System.out.println("Agent started.");
-        System.out.println("Config file: " + configFile);
-        System.out.println("Input queue: " + config.inputQueue);
-        System.out.println("Output queue: " + config.outputQueue);
-
-        try {
-            dequeueLoop(worker);
-        } finally {
-            running.set(false);
-            worker.shutdown();
-
-            if (!worker.awaitTermination(
-                    config.shutdownTimeoutSeconds,
-                    TimeUnit.SECONDS)) {
-
-                worker.shutdownNow();
-            }
-
-            fq.closeQueue(outputQueueId);
-            fq.closeQueue(inputQueueId);
-            fq.closeLogger();
-
-            System.out.println("Agent stopped.");
+        errorQueueId = fq.openQueue(setting("queue.path"), errorQueue);
+        if (errorQueueId < 0) {
+            throw new IllegalStateException("Cannot open error queue: " + errorQueue);
         }
     }
 
-    // --------------------------------------------------
-    // Input dequeue loop
-    // --------------------------------------------------
+    private void close() {
+        if (errorQueueId >= 0) {
+            fq.closeQueue(errorQueueId);
+        }
+        if (outputQueueId >= 0) {
+            fq.closeQueue(outputQueueId);
+        }
+        if (inputQueueId >= 0) {
+            fq.closeQueue(inputQueueId);
+        }
+        if (loggerOpened) {
+            fq.closeLogger();
+        }
+    }
 
-    /*
-     * Dequeue one XA message, then dispatch processing
-     * to a worker thread.
-     *
-     * The current JNI wrapper permits only one pending XA
-     * message per queue, so wait for processing before
-     * dequeuing the next message.
+    private static String now14() {
+        return LocalDateTime.now().format(DATE14);
+    }
+
+    private static String limitedReason(String text) {
+        if (text == null || text.isBlank()) {
+            return "UNKNOWN";
+        }
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c >= 32 && c <= 126 && result.length() < 32) {
+                result.append(c);
+            }
+        }
+        return result.length() == 0 ? "AUDIT_ERROR" : result.toString();
+    }
+
+    /** Override correlation and status fields, never randomize them. */
+    private String response(List<FieldMap.Field> fields,
+                            Map<String, String> request,
+                            String kind,
+                            String code,
+                            String group,
+                            String reason) {
+        Map<String, String> values = new HashMap<>();
+        values.put("MSG_KIND", kind);
+        values.put("RESULT_CODE", code);
+        values.put("RESULT_GROUP_CODE", group);
+        values.put("REASON", limitedReason(reason));
+        values.put("SEND_TIME", now14());
+        values.put("DONE_DATE", now14());
+
+        String history = request.get("HISTORY_KEY");
+        if (history != null && !history.isEmpty()) {
+            values.put("HISTORY_KEY", history);
+        } else {
+            throw new IllegalArgumentException(
+                "HISTORY_KEY missing: cannot safely correlate response");
+        }
+
+        // Override only fields that are defined in this response map.
+        Map<String, String> selected = new HashMap<>();
+        for (FieldMap.Field field : fields) {
+            if (values.containsKey(field.name)) {
+                selected.put(field.name, values.get(field.name));
+            }
+        }
+        return generator.generate(fields, ++responseSequence, selected);
+    }
+
+    /** Placeholder business operation; replace with actual telecom submission. */
+    private void doBusinessWork(Map<String, String> request) {
+        // Existing Agent had only a sample return value: BUSINESS_OK.
+    }
+
+    /** Retry exactly the same bytes; never regenerate or resubmit business work. */
+    private boolean enqueueWithRetry(String payload, long inputSeq) {
+        return enqueueBytesWithRetry(outputQueueId,
+            payload.getBytes(StandardCharsets.UTF_8), inputSeq);
+    }
+
+    private boolean enqueueBytesWithRetry(int queueId, byte[] bytes, long inputSeq) {
+        while (RUNNING.get()) {
+            FQueue.EnqueueResult result;
+            try {
+                result = fq.enQueue(queueId, bytes, FQueue.EN_NORMAL_MODE);
+            } catch (Exception error) {
+                throw new IllegalStateException("Output enqueue exception; XA pending", error);
+            }
+            if (result != null && result.rc > 0) {
+                return true;
+            }
+            System.err.println("enqueue failed rc=" +
+                (result == null ? "null" : result.rc) +
+                ", input seq=" + inputSeq + "; retrying same payload");
+            sleep(number("retry.delay.ms"));
+        }
+        return false;
+    }
+
+    private static void sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException error) {
+            Thread.currentThread().interrupt();
+            RUNNING.set(false);
+        }
+    }
+
+    /**
+     * Unreplyable messages go to a separate error queue. Preserve the exact
+     * input bytes, then commit XA only after the error enqueue succeeds.
      */
-    private static void dequeueLoop(ExecutorService worker)
-            throws Exception {
+    private boolean quarantine(FQueue.FQueueMessage message, String reason) {
+        System.err.println("Rejected input seq=" + message.seq + " reason=" + reason);
+        if (!enqueueBytesWithRetry(errorQueueId, message.data, message.seq)) {
+            return false;
+        }
+        return commit(message);
+    }
 
-        while (running.get()) {
+    /** Process a single pending XA; never commit after a failed output enqueue. */
+    private boolean process(FQueue.FQueueMessage message) {
+        Map<String, String> request;
+        try {
+            request = JsonAudit.parseObject(
+                new String(message.data, StandardCharsets.UTF_8));
+        } catch (RuntimeException error) {
+            return quarantine(message, "INVALID_JSON: " + error.getMessage());
+        }
 
-            FQueue.FQueueMessage message =
-                fq.deQueueXA(inputQueueId);
+        String kind = request.get("MSG_KIND");
+        if ("HEALTH_CHECK".equals(kind)) {
+            return commit(message);
+        }
+        if (kind == null || !kind.matches("[SLM]")) {
+            return quarantine(message, "Missing/unsupported MSG_KIND: " + kind);
+        }
+        if (request.get("HISTORY_KEY") == null ||
+            request.get("HISTORY_KEY").isEmpty()) {
+            return quarantine(message, "Missing HISTORY_KEY");
+        }
+        List<FieldMap.Field> map = inputMaps.get(kind);
+        List<String> errors = new ArrayList<>();
+        if (map == null) {
+            errors.add("Unsupported MSG_KIND: " + kind);
+        } else {
+            errors.addAll(JsonAudit.validateObject(map, request));
+        }
 
+        String ack;
+        String result = null;
+        try {
+            if (!errors.isEmpty()) {
+                System.err.println("Audit failed seq=" + message.seq + " " + errors);
+                ack = response(ackMap, request, kind,
+                    "9999", "03", "AUDIT_ERROR");
+            } else {
+                // Do not submit business twice when an output enqueue is retried.
+                doBusinessWork(request);
+                ack = response(ackMap, request, kind, "0000", "01", "SUCCESS");
+                result = response(resultMap, request, kind, "0000", "01", "DELIVERED");
+            }
+        } catch (Exception error) {
+            // If response construction fails, no output was published yet.
+            // Preserve input in the error queue instead of blocking all traffic.
+            return quarantine(message, "Response/business failure: " + error.getMessage());
+        }
+
+        // Two independent enqueues are NOT atomic. ACK may be duplicated after crash.
+        if (!enqueueWithRetry(ack, message.seq)) {
+            return false;
+        }
+        if (result != null && !enqueueWithRetry(result, message.seq)) {
+            return false;
+        }
+        return commit(message);
+    }
+
+    private boolean commit(FQueue.FQueueMessage message) {
+        int rc = fq.commit(message);
+        if (rc != 0) {
+            System.err.println("XA commit failed seq=" + message.seq + " rc=" + rc);
+            return false;
+        }
+        System.out.println("Committed seq=" + message.seq);
+        return true;
+    }
+
+    private void run() {
+        open();
+        System.out.println("Agent started with 5 map files; error queue=" +
+            setting("queue.error"));
+        while (RUNNING.get()) {
+            FQueue.FQueueMessage message = fq.deQueueXA(inputQueueId);
             if (message == null) {
-                Thread.sleep(config.dequeueIdleMs);
+                sleep(number("dequeue.idle.ms"));
                 continue;
             }
-
-            Future<ProcessResult> future =
-                worker.submit(() -> processMessage(message));
-
-            ProcessResult result;
-
-            try {
-                result = future.get();
-            } catch (ExecutionException e) {
-                System.err.println(
-                    "Worker exception: " + e.getCause());
-
-                /*
-                 * Do not blindly commit or cancel.
-                 * The worker may already have enqueued a result.
-                 */
-                running.set(false);
-                break;
-            }
-
-            if (result == ProcessResult.FATAL) {
-                System.err.println(
-                    "Fatal processing state; stopping agent.");
-
-                running.set(false);
-                break;
-            }
-
-            if (result == ProcessResult.RETRY) {
-                Thread.sleep(config.retryDelayMs);
+            if (!process(message)) {
+                RUNNING.set(false);
+                throw new IllegalStateException(
+                    "Processing stopped with unresolved XA seq=" + message.seq);
             }
         }
     }
 
-    // --------------------------------------------------
-    // Message processing
-    // --------------------------------------------------
-
-    /*
-     * Audit JSON -> do business work -> enqueue result
-     * -> commit input XA message.
-     */
-    private static ProcessResult processMessage(
-            FQueue.FQueueMessage message) {
-
-        String input = new String(
-            message.data,
-            StandardCharsets.UTF_8);
-
-        String output;
-
+    public static void main(String[] args) throws Exception {
+        String file = args.length > 0 ? args[0] : "conf/Agent.properties";
+        Agent agent = new Agent(file);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> RUNNING.set(false)));
         try {
-            output = auditAndDoWork(input);
-			if( output == null ) {
-				int commitRc = fq.commit(message);
-
-				if (commitRc != 0) {
-					/*
-					 * The result may already be in the output queue.
-					 * Stop to avoid blindly retrying and duplicating it.
-					 */
-					System.err.println(
-						"Input commit failed: " + commitRc);
-
-					return ProcessResult.FATAL;
-				}
-
-				System.out.println(
-					"(Health Checking) Processed input seq=" + message.seq);
-
-				return ProcessResult.COMMITTED;
-			}
-        } catch (Exception e) {
-            System.err.println(
-                "Processing error: " + e.getMessage());
-
-            output = makeErrorResult(
-                input,
-                "PROCESS_ERROR",
-                e.getMessage());
-        }
-
-        byte[] outputBytes =
-            output.getBytes(StandardCharsets.UTF_8);
-
-        /*
-         * Output queue may become temporarily full.
-         * Keep the input XA pending and retry ONLY the same output
-         * payload every second. Never re-run the business operation
-         * or cancel the input XA because of an enqueue failure.
-         *
-         * NOTE: The current JNI API does not expose a distinct FULL
-         * status here. Therefore rc <= 0 is retried as well. Verify
-         * native error codes before using this policy in production.
-         */
-        while (running.get()) {
-            FQueue.EnqueueResult enqueueResult;
-
-            try {
-                enqueueResult = fq.enQueue(
-                    outputQueueId,
-                    outputBytes,
-                    FQueue.EN_NORMAL_MODE);
-            } catch (Exception e) {
-                System.err.println(
-                    "Output enqueue threw an exception; XA remains pending: " + e);
-                return ProcessResult.FATAL;
-            }
-
-            if (enqueueResult != null && enqueueResult.rc > 0) {
-                break;
-            }
-
-            System.err.println(
-                "Output enqueue failed (possible FULL), rc="
-                + (enqueueResult == null ? "null" : enqueueResult.rc)
-                + "; retrying the same message in 1 second. seq="
-                + message.seq);
-
-            try {
-                Thread.sleep(1000L);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                System.err.println(
-                    "Output enqueue retry interrupted; input XA not committed/cancelled.");
-                return ProcessResult.FATAL;
-            }
-        }
-
-        if (!running.get()) {
-            System.err.println(
-                "Agent stopping before output enqueue succeeded; input XA remains pending.");
-            return ProcessResult.FATAL;
-        }
-
-        int commitRc = fq.commit(message);
-
-        if (commitRc != 0) {
-            /*
-             * The result may already be in the output queue.
-             * Stop to avoid blindly retrying and duplicating it.
-             */
-            System.err.println(
-                "Input commit failed: " + commitRc);
-
-            return ProcessResult.FATAL;
-        }
-
-        System.out.println(
-            "Processed input seq=" + message.seq
-            + ", resultBytes=" + outputBytes.length);
-
-        return ProcessResult.COMMITTED;
-    }
-
-    // --------------------------------------------------
-    // JSON audit and business processing
-    // --------------------------------------------------
-
-    /*
-     * Example audit:
-     * Required fields must exist, be strings, and not be blank.
-     */
-    private static String auditAndDoWork(String input)
-            throws Exception {
-
-        JsonNode root = JSON.readTree(input);
-
-        if (root == null || !root.isObject()) {
-            return makeErrorResult(
-                input,
-                "INVALID_JSON",
-                "Root must be an object");
-        }
-
-        String[] required = {
-            "TITLE",
-            "HISTOTY_KEY", // 20 bytes
-            "MSG_KIND", // SMS:S, LMS:L, RCS:R, AlimTalk:K, FriendTalk: A, FAX:F, E-mail:E, PUSH:P
-            "MSG_TYPE", // 국내:1, 국재:2
-			"REQUEST_CO_ID", // 삼성증권지정코드 - KISA최초발신사업자 식별코드
-			"REQUEST_DTTM", // EAI 부터 최초 발송요청 수신시간(게이트웨이수신시간)
-			"DIST_Q_DTTM", // 분배시간: 분배기가 중계사큐에 메시지를 넣은 시간
-            "RCV_PHN_NO", // 착신가입자번호
-            "SND_PHN_NO", // 발신번호
-            "CALLBACK_NO", // 회신번호
-            "SMS_MESSAGE" // 118 bytes 단문메시지
-        };
-
-        for (String field : required) {
-
-            JsonNode value = root.get(field);
-
-            if (value == null
-                    || !value.isTextual()
-                    || value.asText().trim().isEmpty()) {
-
-                return makeErrorResult(
-                    input,
-                    "AUDIT_ERROR",
-                    "Missing, empty or non-string field: "
-                    + field);
-            }
-        }
-
-		/*
-		** health_check
-		*/
-		if( root.get("MSG_KIND").asText() == "HEALTH_CHECK") {
-			return null;
-		}
-
-        /*
-         * TODO:
-         * 1. Validate exact/max lengths and enumerations.
-         * 2. Validate SEND_TIME format.
-         * 3. Call the real business operation.
-         */
-        String businessResult = doBusinessWork(root);
-
-        ObjectNode result = JSON.createObjectNode();
-
-        result.put("RESP_KIND", "RESULT");
-        result.put("RESULT_CODE", "0000");
-        result.put("RESULT_GROUP_CODE", "1");
-        result.put("REASON", "");
-
-		// 분배기가 내려준값을 돌려준다.
-        result.put(
-            "MSG_KIND",
-            root.get("MSG_KIND").asText());
-        result.put(
-            "END_TIME",
-            root.get("DIST_Q_DTTM").asText());
-
-        result.put(
-            "HISTORY_KEY",
-            root.get("HISTORY_KEY").asText());
-
-
-		String currentTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-        result.put( "DONE_DATE", currentTime);
-
-        result.put("AGENT_CODE", "K"); // KT:K, SK:S, LG:L, infobank:I
-        result.put("TELECOM_CODE", "KT");
-
-        result.put(
-            "SESSION_ID",
-            Instant.now().toString());
-        result.put(
-            "SESSION_NO",
-            Instant.now().toString());
-
-        // result.put("BUSINESS_RESULT", businessResult);
-        result.put("EXTRA", "");
-		
-        return JSON.writeValueAsString(result);
-    }
-
-    private static String doBusinessWork(JsonNode input) {
-
-        /*
-         * Replace this sample with the actual business logic.
-         */
-        return "BUSINESS_OK";
-    }
-
-    // --------------------------------------------------
-    // Error result
-    // --------------------------------------------------
-
-    private static String makeErrorResult(
-            String input,
-            String code,
-            String reason) {
-
-        ObjectNode result = JSON.createObjectNode();
-
-        result.put("RESULT_CODE", code);
-
-        result.put(
-            "RESULT_MESSAGE",
-            reason == null ? "Unknown error" : reason);
-
-        result.put("INPUT", input);
-
-        result.put(
-            "PROCESSED_AT",
-            Instant.now().toString());
-
-        try {
-            return JSON.writeValueAsString(result);
-        } catch (Exception e) {
-            return "{\"RESULT_CODE\":\"RESULT_BUILD_ERROR\"}";
+            agent.run();
+        } finally {
+            agent.close();
         }
     }
 }
-

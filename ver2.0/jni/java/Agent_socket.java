@@ -15,6 +15,9 @@ public final class Agent_socket {
     private static final Logger LOG = Logger.getLogger(Agent_socket.class.getName());
     private static final DateTimeFormatter TS = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
     private final Config cfg;
+    private final MapMessageCodec codec;
+    private FileQueueSocket errorOutput;
+    private final Object errorLock = new Object();
     private final AtomicBoolean running = new AtomicBoolean(true);
     private final BlockingQueue<JSONObject> reports = new LinkedBlockingQueue<>();
     private final TelecomAdapter telecom;
@@ -23,8 +26,9 @@ public final class Agent_socket {
     private Thread reportThread;
     private final Object inputLock = new Object();
 
-    private Agent_socket(Config cfg) {
+    private Agent_socket(Config cfg) throws Exception {
         this.cfg = cfg;
+        this.codec = new MapMessageCodec(cfg.props);
         this.telecom = new SimulatedTelecom(cfg.simulatedDelayMs);
     }
 
@@ -57,7 +61,12 @@ public final class Agent_socket {
                     // A completed DEQU is handed to business processing once.
                     // Only transport failures trigger reconnection; business processing
                     // does not re-DEQU the same message explicitly.
-                    process(deq.message());
+                    try {
+                        process(deq.message());
+                    } catch (RuntimeException badMessage) {
+                        LOG.log(Level.SEVERE, "Per-message processing failed; saving original to TST", badMessage);
+                        publishError(deq.message());
+                    }
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     break;
@@ -74,6 +83,7 @@ public final class Agent_socket {
             stop();
             if (reportThread != null) reportThread.join(3000);
             telecom.close();
+            closeError();
             closeInput();
             closeOutput();
             LOG.info("Agent_socket stopped");
@@ -99,75 +109,95 @@ public final class Agent_socket {
     }
 
     private void process(String raw) throws Exception {
-        JSONObject request;
+        Map<String,String> values;
         try {
-            request = new JSONObject(raw);
-        } catch (Exception e) {
-            // Even syntactically invalid JSON receives a failure ACK.
-            LOG.log(Level.WARNING, "Malformed input JSON; sending failure ACK", e);
-            publish(failureAck(new JSONObject(), "INVALID_JSON: " + e.getMessage()));
+            values = codec.parse(raw);
+        } catch (RuntimeException ex) {
+            LOG.log(Level.WARNING, "INVALID_JSON: saving original to error queue", ex);
+            publishError(raw);
             return;
         }
-
-        try {
-            validateSms(request);
-        } catch (Exception e) {
-            LOG.log(Level.WARNING, "Invalid SMS; sending failure ACK, HISTORY_KEY="
-                    + request.optString("HISTORY_KEY", ""), e);
-            publish(failureAck(request, "VALIDATION_ERROR: " + e.getMessage()));
+        if ("HEALTH_CHECK".equals(values.get("MSG_KIND"))) return;
+        String kind = values.get("MSG_KIND");
+        if (!Set.of("S", "L", "M").contains(kind == null ? "" : kind)
+                || values.getOrDefault("HISTORY_KEY", "").isBlank()) {
+            LOG.warning("Unreplyable request, saving original to error queue: MSG_KIND=" + kind);
+            publishError(raw);
             return;
         }
-        if (!running.get()) return;
-
-        // Keep ACK ahead of any asynchronous RESULT on the shared output socket.
+        List<String> errors = codec.validate(values);
+        if (!errors.isEmpty()) {
+            LOG.warning("AUDIT_ERROR: " + errors + " HISTORY_KEY=" + values.get("HISTORY_KEY"));
+            publish(codec.generate(values, "ACK", "9999", "03", "AUDIT_ERROR"));
+            return;
+        }
+        JSONObject request = new JSONObject(raw);
         synchronized (outputLock) {
             TelecomAcceptance accepted;
             try {
                 accepted = telecom.submit(request, this::onDeliveryReport);
-            } catch (Exception e) {
-                // NOTE: a real carrier may have accepted the request before a timeout.
-                // The adapter must distinguish a definitive rejection from an unknown outcome.
-                LOG.log(Level.WARNING, "Telecom submission failed; sending failure ACK", e);
-                publish(failureAck(request, "TELECOM_ERROR: " + e.getMessage()));
+            } catch (Exception ex) {
+                LOG.log(Level.WARNING, "Telecom submission error", ex);
+                publish(codec.generate(values, "ACK", "9999", "03", "TELECOM_ERROR"));
                 return;
             }
             if (accepted == null) {
-                publish(failureAck(request, "TELECOM_ERROR: null acceptance"));
+                publish(codec.generate(values, "ACK", "9999", "03", "TELECOM_ERROR"));
                 return;
             }
             boolean success = "0000".equals(accepted.code());
-            JSONObject ack = response(request, "ACK", success ? "0000" : "9999",
-                    accepted.group(), success ? accepted.reason() :
-                    "TELECOM_REJECTED(" + accepted.code() + "): " + accepted.reason(),
-                    accepted.sessionId(), accepted.sessionNo());
-            ack.put("SEND_TIME", now());
-            ack.put("DONE_DATE", now());
-            publish(ack);
-            LOG.info("ACK published code=" + ack.getString("RESULT_CODE")
-                    + " HISTORY_KEY=" + request.optString("HISTORY_KEY", ""));
+            values.put("SESSION_ID", accepted.sessionId() == null ? "" : accepted.sessionId());
+            values.put("SESSION_NO", accepted.sessionNo() == null ? "" : accepted.sessionNo());
+            publish(codec.generate(values, "ACK", success ? "0000" : "9999",
+                    accepted.group() == null || accepted.group().isBlank() ? "03" : accepted.group(),
+                    success ? "SUCCESS" : "TELECOM_REJECTED"));
         }
     }
 
-    private JSONObject failureAck(JSONObject request, String reason) {
-        JSONObject ack = response(request, "ACK", "9999", "03", reason, "", "");
-        ack.put("SEND_TIME", now());
-        ack.put("DONE_DATE", now());
-        return ack;
+    private void onDeliveryReport(JSONObject original, TelecomDelivery delivery) {
+        try {
+            Map<String,String> values = codec.parse(original.toString());
+            values.put("SESSION_ID", delivery.sessionId == null ? "" : delivery.sessionId);
+            values.put("SESSION_NO", delivery.sessionNo == null ? "" : delivery.sessionNo);
+            reports.offer(new JSONObject(codec.generate(values, "RESULT", delivery.code,
+                    delivery.group == null || delivery.group.isBlank() ? "03" : delivery.group,
+                    delivery.reason == null || delivery.reason.isBlank() ? "DELIVERED" : delivery.reason)));
+        } catch (Exception ex) {
+            LOG.log(Level.SEVERE, "Delivery report generation failed; needs manual recovery", ex);
+        }
     }
 
-    private void onDeliveryReport(JSONObject original, TelecomDelivery delivery) {
-        JSONObject result = response(original, "RESULT", delivery.code, delivery.group,
-                delivery.reason, delivery.sessionId, delivery.sessionNo);
-        result.put("RECV_TIME", now());
-        result.put("DONE_DATE", delivery.doneDate);
-        reports.offer(result);
+    private void publishError(String raw) throws InterruptedException {
+        synchronized (errorLock) {
+            while (running.get()) {
+                try {
+                    if (errorOutput == null) errorOutput = connect(cfg.errorQueue);
+                    FileQueueSocket.Result r = errorOutput.write(raw);
+                    if (r.status() == FileQueueSocket.Status.OK) return;
+                    if (r.status() != FileQueueSocket.Status.FULL)
+                        throw new IOException("Error queue ENQU rejected: " + r.serverResult());
+                    pause(cfg.fullRetryMs);
+                } catch (IOException | IllegalStateException ex) {
+                    LOG.log(Level.WARNING, "Error queue unavailable; retrying", ex);
+                    closeError();
+                    pause(cfg.reconnectDelayMs);
+                }
+            }
+            throw new InterruptedException("Stopping before error queue publish");
+        }
+    }
+
+    private void closeError() {
+        synchronized (errorLock) {
+            if (errorOutput != null) { errorOutput.close(); errorOutput = null; }
+        }
     }
 
     private void reportLoop() {
         while (running.get() || !reports.isEmpty()) {
             try {
                 JSONObject report = reports.poll(200, TimeUnit.MILLISECONDS);
-                if (report != null) publish(report);
+                if (report != null) publish(report.toString());
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return;
@@ -179,8 +209,7 @@ public final class Agent_socket {
         }
     }
 
-    private void publish(JSONObject payload) throws InterruptedException {
-        final String bytes = payload.toString();
+    private void publish(String bytes) throws InterruptedException {
         synchronized (outputLock) {
             while (running.get()) {
                 try {
@@ -214,37 +243,6 @@ public final class Agent_socket {
         s.open();
         LOG.info("LINK OK queue=" + queue);
         return s;
-    }
-
-    private static void validateSms(JSONObject r) {
-        // Input SMS schema based on supplied specification. Not all fields are mandatory here.
-        String[] required = {"HISTORY_KEY", "MSG_KIND", "MSG_TYPE", "REQUEST_CO_ID",
-                "REQUEST_DTTM", "DIST_Q_DTTM", "RCV_PHN_NO", "SND_PHN_NO", "SMS_MESSAGE"};
-        for (String k : required) {
-            if (!r.has(k) || !(r.get(k) instanceof String) || r.getString(k).isBlank()) {
-                throw new IllegalArgumentException("Missing/invalid field: " + k);
-            }
-        }
-        if (!"S".equals(r.getString("MSG_KIND"))) throw new IllegalArgumentException("MSG_KIND must be S");
-        if (r.getString("HISTORY_KEY").getBytes(StandardCharsets.UTF_8).length > 20)
-            throw new IllegalArgumentException("HISTORY_KEY exceeds configured 20-byte rule");
-    }
-
-    private JSONObject response(JSONObject r, String kind, String code, String group,
-                                String reason, String sid, String sno) {
-        JSONObject v = new JSONObject();
-        v.put("RESP_KIND", kind);
-        v.put("RESULT_CODE", code);
-        v.put("RESULT_GROUP_CODE", group == null || group.isBlank() ? "03" : group);
-        v.put("REASON", reason == null ? "" : reason.substring(0, Math.min(reason.length(), 32)));
-        v.put("MSG_KIND", r.optString("MSG_KIND", ""));
-        v.put("HISTORY_KEY", r.optString("HISTORY_KEY", ""));
-        v.put("TELECOM_CODE", cfg.telecomCode);
-        v.put("SESSION_ID", sid == null ? "" : sid);
-        v.put("SESSION_NO", sno == null ? "" : sno);
-        v.put("SERVICE_ID", r.optString("SERVICE_ID", ""));
-        v.put("CUSTOMER", "");
-        return v;
     }
 
     private void stop() {
@@ -289,13 +287,16 @@ public final class Agent_socket {
     }
 
     static final class Config {
-        String host, queuePath, inputQueue, outputQueue, telecomCode, logFile;
+        String host, queuePath, inputQueue, outputQueue, errorQueue, telecomCode, logFile;
+        Properties props;
         int port, connectTimeoutMs, readTimeoutMs, maxFrameBytes;
         long idleMs, fullRetryMs, simulatedDelayMs, reconnectDelayMs;
         static Config load(String file) throws IOException {
             Properties p = new Properties();
             try (InputStream in = Files.newInputStream(Path.of(file))) { p.load(in); }
             Config c = new Config();
+            c.props = p;
+            c.errorQueue = required(p, "queue.error");
             c.host = required(p,"server.host");
             c.port = Integer.parseInt(required(p,"server.port"));
             c.queuePath = required(p,"queue.path");

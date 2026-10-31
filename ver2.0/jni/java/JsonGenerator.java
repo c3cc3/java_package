@@ -126,6 +126,35 @@ public final class JsonGenerator {
         return json.append('}').toString();
     }
 
+    /** Generate one response with business values overriding map defaults. */
+    public String generate(List<FieldMap.Field> fields,
+                           long index,
+                           java.util.Map<String, String> overrides) {
+        java.util.Set<String> allowed = new java.util.HashSet<>();
+        for (FieldMap.Field field : fields) {
+            allowed.add(field.name);
+        }
+        for (String key : overrides.keySet()) {
+            if (!allowed.contains(key)) {
+                throw new IllegalArgumentException("override field not in map: " + key);
+            }
+        }
+        StringBuilder json = new StringBuilder("{");
+        for (FieldMap.Field field : fields) {
+            String value = overrides.containsKey(field.name)
+                ? overrides.get(field.name) : generateValue(field, index);
+            List<String> errors = FieldMap.validate(field, value);
+            if (!errors.isEmpty()) {
+                throw new IllegalArgumentException("invalid " + field.name + ": " + errors);
+            }
+            if (json.length() > 1) {
+                json.append(',');
+            }
+            json.append(quote(field.name)).append(':').append(quote(value));
+        }
+        return json.append('}').toString();
+    }
+
     public static void main(String[] args) {
         if (args.length < 1 || args.length > 2) {
             System.err.println("Usage: java JsonGenerator MAP_FILE [COUNT]");

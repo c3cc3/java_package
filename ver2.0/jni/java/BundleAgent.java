@@ -30,6 +30,8 @@ public class BundleAgent {
         String queuePath;
         String inputQueue;
         String outputQueue;
+        String errorQueue;
+        Properties props;
 
         int dequeueIdleMs;
         int retryDelayMs;
@@ -48,6 +50,8 @@ public class BundleAgent {
             }
 
             Config c = new Config();
+            c.props = p;
+            c.errorQueue = required(p, "queue.error");
 
             c.logFile = required(p, "log.file");
             c.logLevel = integer(p, "log.level");
@@ -119,6 +123,8 @@ public class BundleAgent {
     }
 
     private static Config config;
+    private static MapMessageCodec codec;
+    private static int errorQueueId = -1;
 
 
     private static final String LOG_FILE =
@@ -175,6 +181,7 @@ public class BundleAgent {
 
         // Load and validate configuration before opening resources.
         config = Config.load(configFile);
+        codec = new MapMessageCodec(config.props);
 
         Runtime.getRuntime().addShutdownHook(
             new Thread(() -> {
@@ -230,6 +237,8 @@ public class BundleAgent {
                 "Cannot open output queue: " + config.outputQueue);
         }
 
+        errorQueueId = fq.openQueue(config.queuePath, config.errorQueue);
+        if (errorQueueId < 0) throw new IllegalStateException("Cannot open error queue");
         Path journalPath = Paths.get(JOURNAL_FILE);
 
         store = new DurableStore(journalPath);
@@ -547,50 +556,36 @@ public class BundleAgent {
                 "Missing result payload: " + message.id);
         }
 
-        // Retry only the output enqueue; do not reprocess the input.
-        // The result remains RESULT_PENDING until enqueue succeeds.
-        FQueue.EnqueueResult result;
+        JsonNode root = JSON.readTree(message.result);
+        if (!root.path("__fq_batch_v1").asBoolean(false)) {
+            // Legacy journal record: publish unchanged to preserve recovery compatibility.
+            publishPayload(message.id, outputQueueId, message.result);
+        } else {
+            JsonNode items = root.path("items");
+            if (!items.isArray()) throw new IllegalStateException("Invalid durable output batch");
+            for (int index = message.publishedCount; index < items.size(); index++) {
+                JsonNode item = items.get(index);
+                String destination = item.path("destination").asText();
+                int queueId = "ERROR".equals(destination) ? errorQueueId : outputQueueId;
+                if (!"ERROR".equals(destination) && !"OUTPUT".equals(destination))
+                    throw new IllegalStateException("Invalid output destination " + destination);
+                byte[] bytes = item.path("payload").asText().getBytes(StandardCharsets.UTF_8);
+                publishPayload(message.id, queueId, bytes);
+                store.setPublishedCount(message.id, index + 1);
+            }
+        }
+        store.setState(message.id, DurableStore.State.DONE);
+    }
+
+    private static void publishPayload(String id, int queueId, byte[] payload) throws Exception {
         while (running.get()) {
-            result = fq.enQueue(
-                outputQueueId,
-                message.result,
-                FQueue.EN_NORMAL_MODE);
-
-            if (result != null && result.rc > 0) {
-                break;
-            }
-
-            System.err.println(
-                "Result enqueue failed; retry after 1 second. id="
-                + message.id + ", rc="
-                + (result == null ? "null" : result.rc));
-
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return; // Keep RESULT_PENDING for restart recovery.
-            }
+            FQueue.EnqueueResult result = fq.enQueue(queueId, payload, FQueue.EN_NORMAL_MODE);
+            if (result != null && result.rc > 0) return;
+            System.err.println("Enqueue failed id=" + id + ", rc="
+                    + (result == null ? "null" : result.rc) + "; retrying");
+            Thread.sleep(1000);
         }
-
-        if (!running.get()) {
-            return; // Do not mark DONE on shutdown.
-        }
-
-        /*
-         * A crash after enqueue but before DONE may cause
-         * duplicate output on restart. This is at-least-once
-         * delivery unless the destination supports deduplication.
-         */
-        store.setState(
-            message.id, DurableStore.State.DONE);
-
-		/*
-        System.out.println(
-            "Result enqueued. id=" + message.id
-            + ", seq=" + message.seq
-            + ", resultSeq=" + result.seq);
-		*/
+        throw new InterruptedException("Stopped before publishing " + id);
     }
 
 
@@ -649,117 +644,58 @@ public class BundleAgent {
      * Example audit:
      * Required fields must exist, be strings, and not be blank.
      */
-    private static String auditAndDoWork(String input)
-            throws Exception {
-
-        JsonNode root = JSON.readTree(input);
-
-        if (root == null || !root.isObject()) {
-            return makeErrorResult(
-                input,
-                "INVALID_JSON",
-                "Root must be an object");
-        }
-
-        String[] required = {
-            "TITLE",
-            "HISTOTY_KEY", // 20 bytes
-            "MSG_KIND", // SMS:S, LMS:L, RCS:R, AlimTalk:K, FriendTalk: A, FAX:F, E-mail:E, PUSH:P
-            "MSG_TYPE", // 국내:1, 국재:2
-			"REQUEST_CO_ID", // 삼성증권지정코드 - KISA최초발신사업자 식별코드
-			"REQUEST_DTTM", // EAI 부터 최초 발송요청 수신시간(게이트웨이수신시간)
-			"DIST_Q_DTTM", // 분배시간: 분배기가 중계사큐에 메시지를 넣은 시간
-            "RCV_PHN_NO", // 착신가입자번호
-            "SND_PHN_NO", // 발신번호
-            "CALLBACK_NO", // 회신번호
-            "SMS_MESSAGE" // 118 bytes 단문메시지
-        };
-
-        for (String field : required) {
-
-            JsonNode value = root.get(field);
-
-            if (value == null
-                    || !value.isTextual()
-                    || value.asText().trim().isEmpty()) {
-
-                return makeErrorResult(
-                    input,
-                    "AUDIT_ERROR",
-                    "Missing, empty or non-string field: "
-                    + field);
-            }
-        }
-
-        /*
-         * TODO:
-         * 1. Validate exact/max lengths and enumerations.
-         * 2. Validate SEND_TIME format.
-         * 3. Call the real business operation.
-         */
-        String businessResult = doBusinessWork(root);
-
-        ObjectNode result = JSON.createObjectNode();
-
-        result.put("RESP_KIND", "RESULT");
-        result.put("RESULT_CODE", "0000");
-        result.put("RESULT_GROUP_CODE", "1");
-        result.put("REASON", "");
-
-		// 분배기가 내려준값을 돌려준다.
-        result.put(
-            "MSG_KIND",
-            root.get("MSG_KIND").asText());
-
-        result.put( "END_TIME",
-            root.get("DIST_Q_DTTM").asText());
-
-        result.put(
-            "HISTORY_KEY",
-            root.get("HISTORY_KEY").asText());
-
-		String currentTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-        result.put( "DONE_DATE", currentTime);
-
-        result.put("AGENT_CODE", "K"); // KT:K, SK:S, LG:L, infobank:I
-        result.put("TELECOM_CODE", "KT");
-
-        result.put(
-            "SESSION_ID",
-            Instant.now().toString());
-        result.put(
-            "SESSION_NO",
-            Instant.now().toString());
-
-        // result.put("BUSINESS_RESULT", businessResult);
-        result.put("EXTRA", "");
-		
-        return JSON.writeValueAsString(result);
-    }
-
-    private static String doBusinessWork(JsonNode input) {
-        /*
-         * Replace this sample with the real business logic.
-         */
-        return "BUSINESS_OK";
-    }
-
-    private static String makeErrorResult(
-        String input, String code, String reason) {
-
-        ObjectNode result = JSON.createObjectNode();
-
-        result.put("RESULT_CODE", code);
-        result.put(
-            "RESULT_MESSAGE",
-            reason == null ? "Unknown error" : reason);
-        result.put("INPUT", input);
-        result.put("PROCESSED_AT", Instant.now().toString());
-
+    /** Store a durable envelope of output messages, with per-message destinations. */
+    private static String auditAndDoWork(String input) throws Exception {
+        com.fasterxml.jackson.databind.node.ArrayNode items = JSON.createArrayNode();
+        java.util.Map<String,String> request;
         try {
-            return JSON.writeValueAsString(result);
-        } catch (Exception e) {
-            return "{\"RESULT_CODE\":\"RESULT_BUILD_ERROR\"}";
+            request = codec.parse(input);
+        } catch (RuntimeException ex) {
+            System.err.println("INVALID_JSON: " + ex.getMessage());
+            addOutput(items, "ERROR", input);
+            return envelope(items);
+        }
+        if ("HEALTH_CHECK".equals(request.get("MSG_KIND"))) return envelope(items);
+        String kind = request.get("MSG_KIND");
+        if (!java.util.Set.of("S","L","M").contains(kind == null ? "" : kind)
+                || request.getOrDefault("HISTORY_KEY", "").isBlank()) {
+            System.err.println("Unreplyable request: MSG_KIND=" + kind + " HISTORY_KEY missing/invalid");
+            addOutput(items, "ERROR", input);
+            return envelope(items);
+        }
+        java.util.List<String> errors = codec.validate(request);
+        if (!errors.isEmpty()) {
+            System.err.println("AUDIT_ERROR: " + errors);
+            addOutput(items, "OUTPUT", codec.generate(request, "ACK", "9999", "03", "AUDIT_ERROR"));
+            return envelope(items);
+        }
+        // Preserve the original sample business behavior; no real telecom operation.
+        addOutput(items, "OUTPUT", codec.generate(request, "ACK", "0000", "01", "SUCCESS"));
+        addOutput(items, "OUTPUT", codec.generate(request, "RESULT", "0000", "01", "DELIVERED"));
+        return envelope(items);
+    }
+
+    private static void addOutput(com.fasterxml.jackson.databind.node.ArrayNode items,
+                                  String destination, String payload) {
+        ObjectNode item = items.addObject();
+        item.put("destination", destination);
+        item.put("payload", payload);
+    }
+
+    private static String envelope(com.fasterxml.jackson.databind.node.ArrayNode items) throws Exception {
+        ObjectNode envelope = JSON.createObjectNode();
+        envelope.put("__fq_batch_v1", true);
+        envelope.set("items", items);
+        return JSON.writeValueAsString(envelope);
+    }
+
+    private static String makeErrorResult(String input, String code, String reason) {
+        try {
+            com.fasterxml.jackson.databind.node.ArrayNode items = JSON.createArrayNode();
+            addOutput(items, "ERROR", input);
+            return envelope(items);
+        } catch (Exception ex) {
+            throw new IllegalStateException("Cannot construct error envelope", ex);
         }
     }
 
@@ -829,6 +765,7 @@ public class BundleAgent {
         }
 
         if (fq != null) {
+            if (errorQueueId >= 0) fq.closeQueue(errorQueueId);
             if (outputQueueId >= 0) {
                 fq.closeQueue(outputQueueId);
             }
