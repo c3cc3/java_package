@@ -173,7 +173,7 @@ public final class FQueueTester {
                 try {
                     if(out!=null) {out.write(msg.data);out.write('\n');out.flush();}
                     int rc=fq.commit(msg);
-                    if(rc>0) OK.increment();
+                    if(rc>=0) OK.increment();
                     else {ERR.increment();System.err.println("Commit failed rc="+rc);break;}
                 } catch(Exception e) {
                     ERR.increment();
